@@ -8,10 +8,10 @@ import logging
 
 from database import Database
 from keyboards import get_main_menu, get_cancel_button, get_balance_buttons
-from utils.openai_handler import generate_kurs_ishi_full, generate_maqola
-from utils.docx_creator import create_docx
-from utils.docx_creator_professional import create_kurs_ishi_docx
+from utils.course_writer import generate_course_work
+from utils.document_generator import create_word_document
 import config
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -198,24 +198,21 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
     )
     
     try:
-        content = await generate_kurs_ishi_full(
-            topic=data['topic'],
-            subject=data['subject'],
-            fish=data['fish'],
-            university=data['university'],
-            course_number=course_number
-        )
+        user_data_for_ai = {
+            'name': data['fish'],
+            'university': data['university'],
+            'subject': data['subject'],
+            'topic': data['topic'],
+            'course': course_number
+        }
         
-        filename = f"kurs_ishi_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        docx_path = create_kurs_ishi_docx(
-            content=content,
-            filename=filename,
-            topic=data['topic'],
-            fish=data['fish'],
-            university=data['university'],
-            subject=data['subject'],
-            course_number=course_number
-        )
+        sections = await generate_course_work(user_data_for_ai)
+        
+        filename = f"kurs_ishi_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+        os.makedirs('generated_files', exist_ok=True)
+        docx_path = os.path.join('generated_files', filename)
+        
+        create_word_document(sections, user_data_for_ai, docx_path)
         
         db.update_balance(telegram_id, -price)
         
@@ -303,10 +300,37 @@ async def process_maqola_topic(message: Message, state: FSMContext, bot):
     )
     
     try:
-        content = await generate_maqola(topic)
+        from utils.course_writer import generate_section_with_ai
         
-        filename = f"maqola_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        filepath = create_docx(content, filename, topic)
+        content = await generate_section_with_ai(
+            f"Quyidagi mavzuda ilmiy maqola yozing: {topic}\n\n"
+            f"Maqola quyidagi qismlardan iborat bo'lishi kerak:\n"
+            f"1. Annotatsiya (o'zbek va ingliz tillarida)\n"
+            f"2. Kirish\n"
+            f"3. Asosiy qism (2-3 bo'lim)\n"
+            f"4. Xulosa\n"
+            f"5. Foydalanilgan adabiyotlar\n\n"
+            f"Matn ilmiy uslubda, batafsil va professional bo'lishi kerak.",
+            max_words=3000
+        )
+        
+        sections = [
+            {'type': 'intro', 'content': content}
+        ]
+        
+        user_data_maqola = {
+            'name': user['full_name'],
+            'university': '',
+            'subject': '',
+            'topic': topic,
+            'course': ''
+        }
+        
+        filename = f"maqola_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+        os.makedirs('generated_files', exist_ok=True)
+        filepath = os.path.join('generated_files', filename)
+        
+        create_word_document(sections, user_data_maqola, filepath)
         
         db.update_balance(telegram_id, -price)
         

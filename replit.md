@@ -63,9 +63,8 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 │   ├── user_handlers.py            # Foydalanuvchi handlarlari (FSM)
 │   └── admin_handlers.py           # Admin handlarlari
 ├── utils/
-│   ├── openai_handler.py           # OpenAI integratsiyasi (multi-section)
-│   ├── docx_creator.py             # Oddiy DOCX yaratish
-│   └── docx_creator_professional.py # Professional kurs ishi DOCX
+│   ├── course_writer.py            # OpenAI orqali kurs ishi yaratish (GPT-4o Mini)
+│   └── document_generator.py       # Professional DOCX yaratish
 ├── generated_files/                # Yaratilgan fayllar
 └── .env                            # Environment o'zgaruvchilar
 ```
