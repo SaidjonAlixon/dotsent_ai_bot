@@ -6,6 +6,16 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
+### 3. Asenkron (Parallel) ishlov berish tizimi
+- Bot endi bir paytda bir nechta foydalanuvchiga xizmat ko'rsatadi
+- Har bir kurs ishi/maqola yaratish **background task** da ishlaydi
+- Foydalanuvchi so'rov yuborgach, darhol javob oladi va boshqa funksiyalardan foydalanishi mumkin
+- Tayyor bo'lgach, foydalanuvchiga avtomatik yuboriladi
+- Bot hech qachon to'xtamaydi, barcha foydalanuvchilar parallel foydalanishi mumkin
+- `asyncio.create_task()` yordamida background ishlov berish
+
+## Oxirgi O'zgarishlar (2025-10-19)
+
 ### YANGI: AI orqali mavzuga asoslangan REJA, MUNDARIJA va ADABIYOTLAR yaratish
 - **REJA** endi mavzu va fanga qarab GPT-4o Mini orqali yaratiladi
 - Har bir bob va band sarlavhasi mavzuga to'liq mos keladi
@@ -183,6 +193,7 @@ Bot endi professional ilmiy maqola ham yarata oladi!
 - [x] Professional DOCX formatlash (titul, reja, mundarija, ilovalar)
 - [x] O'zbekiston standartlariga moslashtirilgan format
 - [x] Ilmiy maqola yaratish (3 tilda annotatsiya, APA format)
+- [x] Asenkron (parallel) ishlov berish - bir paytda ko'p foydalanuvchi
 - [ ] "Yana yozish" va "Asosiy menyu" tugmalari
 - [ ] "Namuna ishni ko'rish" funksiyasi
 - [ ] PDF export funksiyasi (docx2pdf)

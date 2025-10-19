@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 import logging
+import asyncio
 
 from database import Database
 from keyboards import get_main_menu, get_cancel_button, get_balance_buttons
@@ -19,6 +20,115 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 db = Database()
+
+# Background task yaratish uchun
+async def process_course_work_background(bot, telegram_id, user_data_for_ai, price, data):
+    """Background da kurs ishini yaratish"""
+    try:
+        sections = await generate_course_work(user_data_for_ai)
+        
+        filename = f"kurs_ishi_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+        os.makedirs('generated_files', exist_ok=True)
+        docx_path = os.path.join('generated_files', filename)
+        
+        create_word_document(sections, user_data_for_ai, docx_path)
+        
+        db.update_balance(telegram_id, -price)
+        
+        document_file = FSInputFile(docx_path)
+        
+        if config.KURS_ISHLARI_CHANNEL_ID:
+            channel_message = await bot.send_document(
+                chat_id=config.KURS_ISHLARI_CHANNEL_ID,
+                document=document_file,
+                caption=f"""🧾 Kurs ishi tayyorlandi
+
+👤 F.I.Sh: {data['fish']}
+🆔 ID: {telegram_id}
+🏫 O'quv yurti: {data['university']}
+📖 Fan: {data['subject']}
+📚 Mavzu: {data['topic']}
+🎓 Kurs: {user_data_for_ai['course']}
+💰 Narx: {price:,} so'm
+🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
+            )
+            file_link = f"https://t.me/c/{str(config.KURS_ISHLARI_CHANNEL_ID)[4:]}/{channel_message.message_id}"
+        else:
+            file_link = docx_path
+        
+        document_file_user = FSInputFile(docx_path)
+        await bot.send_document(
+            chat_id=telegram_id,
+            document=document_file_user,
+            caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {data['topic']}\n💰 To'langan: {price:,} so'm"
+        )
+        
+        db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
+        
+        logger.info(f"Kurs ishi tayyor: {telegram_id}")
+        
+    except Exception as e:
+        logger.error(f"Kurs ishi yaratishda xatolik: {e}")
+        await bot.send_message(
+            chat_id=telegram_id,
+            text=f"❌ Kurs ishi tayyorlashda xatolik yuz berdi: {str(e)}\n\n"
+                 "Balansingiz o'zgartirilmadi. Iltimos, keyinroq qayta urinib ko'ring.",
+            reply_markup=get_main_menu()
+        )
+
+async def process_article_background(bot, telegram_id, user_data_for_ai, price, topic):
+    """Background da maqolani yaratish"""
+    try:
+        sections = await generate_article(user_data_for_ai)
+        
+        filename = f"maqola_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+        os.makedirs('generated_files', exist_ok=True)
+        filepath = os.path.join('generated_files', filename)
+        
+        create_article_document(sections, user_data_for_ai, filepath)
+        
+        db.update_balance(telegram_id, -price)
+        
+        document_file = FSInputFile(filepath)
+        
+        user = db.get_user(telegram_id)
+        
+        if config.MAQOLALAR_CHANNEL_ID:
+            channel_message = await bot.send_document(
+                chat_id=config.MAQOLALAR_CHANNEL_ID,
+                document=document_file,
+                caption=f"""📰 Maqola tayyorlandi
+
+👤 Ismi: {user['full_name']}
+🆔 ID: {telegram_id}
+🔗 Username: @{user['username'] or 'mavjud emas'}
+📝 Mavzu: {topic}
+💰 Narx: {price:,} so'm
+🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
+            )
+            file_link = f"https://t.me/c/{str(config.MAQOLALAR_CHANNEL_ID)[4:]}/{channel_message.message_id}"
+        else:
+            file_link = filepath
+        
+        document_file_user = FSInputFile(filepath)
+        await bot.send_document(
+            chat_id=telegram_id,
+            document=document_file_user,
+            caption=f"✅ Maqolangiz tayyor!\n\n📝 Mavzu: {topic}\n💰 To'langan: {price:,} so'm"
+        )
+        
+        db.add_order(telegram_id, "maqola", topic, price, file_link)
+        
+        logger.info(f"Maqola tayyor: {telegram_id}")
+        
+    except Exception as e:
+        logger.error(f"Maqola yaratishda xatolik: {e}")
+        await bot.send_message(
+            chat_id=telegram_id,
+            text="❌ Maqola tayyorlashda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.\n\n"
+                 "Balansingiz o'zgartirilmadi.",
+            reply_markup=get_main_menu()
+        )
 
 class UserStates(StatesGroup):
     waiting_for_kurs_topic = State()
@@ -196,65 +306,23 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
         f"📚 Mavzu: {data['topic']}\n"
         f"🎓 Kurs: {course_number}\n\n"
         f"⏳ Kurs ishingiz tayyorlanmoqda...\n"
-        f"Bu 2-3 daqiqa vaqt olishi mumkin. Iltimos, kuting.",
+        f"📲 Tayyor bo'lgach sizga yuboriladi (2-3 daqiqa)\n\n"
+        f"Shu vaqt ichida botning boshqa funksiyalaridan foydalanishingiz mumkin!",
         reply_markup=get_main_menu()
     )
     
-    try:
-        user_data_for_ai = {
-            'name': data['fish'],
-            'university': data['university'],
-            'subject': data['subject'],
-            'topic': data['topic'],
-            'course': course_number
-        }
-        
-        sections = await generate_course_work(user_data_for_ai)
-        
-        filename = f"kurs_ishi_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-        os.makedirs('generated_files', exist_ok=True)
-        docx_path = os.path.join('generated_files', filename)
-        
-        create_word_document(sections, user_data_for_ai, docx_path)
-        
-        db.update_balance(telegram_id, -price)
-        
-        document_file = FSInputFile(docx_path)
-        
-        if config.KURS_ISHLARI_CHANNEL_ID:
-            channel_message = await bot.send_document(
-                chat_id=config.KURS_ISHLARI_CHANNEL_ID,
-                document=document_file,
-                caption=f"""🧾 Kurs ishi tayyorlandi
-
-👤 F.I.Sh: {data['fish']}
-🆔 ID: {telegram_id}
-🏫 O'quv yurti: {data['university']}
-📖 Fan: {data['subject']}
-📚 Mavzu: {data['topic']}
-🎓 Kurs: {course_number}
-💰 Narx: {price:,} so'm
-🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
-            )
-            file_link = f"https://t.me/c/{str(config.KURS_ISHLARI_CHANNEL_ID)[4:]}/{channel_message.message_id}"
-        else:
-            file_link = docx_path
-        
-        document_file_user = FSInputFile(docx_path)
-        await message.answer_document(
-            document=document_file_user,
-            caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {data['topic']}\n💰 To'langan: {price:,} so'm"
-        )
-        
-        db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
-        
-    except Exception as e:
-        logger.error(f"Kurs ishi yaratishda xatolik: {e}")
-        await message.answer(
-            f"❌ Kurs ishi tayyorlashda xatolik yuz berdi: {str(e)}\n\n"
-            "Balansingiz o'zgartirilmadi. Iltimos, keyinroq qayta urinib ko'ring.",
-            reply_markup=get_main_menu()
-        )
+    user_data_for_ai = {
+        'name': data['fish'],
+        'university': data['university'],
+        'subject': data['subject'],
+        'topic': data['topic'],
+        'course': course_number
+    }
+    
+    # Background task yaratish
+    asyncio.create_task(
+        process_course_work_background(bot, telegram_id, user_data_for_ai, price, data)
+    )
     
     await state.clear()
 
@@ -341,61 +409,21 @@ async def process_maqola_authors(message: Message, state: FSMContext, bot):
         f"📝 Mavzu: {topic}\n"
         f"👥 Mualliflar: {len(authors)} ta\n\n"
         f"⏳ Maqolangiz tayyorlanmoqda...\n"
-        f"Bu 2-3 daqiqa vaqt olishi mumkin. Iltimos, kuting.",
+        f"📲 Tayyor bo'lgach sizga yuboriladi (2-3 daqiqa)\n\n"
+        f"Shu vaqt ichida botning boshqa funksiyalaridan foydalanishingiz mumkin!",
         reply_markup=get_main_menu()
     )
     
-    try:
-        user_data_for_ai = {
-            'topic': topic,
-            'subject': 'Ilmiy tadqiqot',
-            'authors': authors
-        }
-        
-        sections = await generate_article(user_data_for_ai)
-        
-        filename = f"maqola_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-        os.makedirs('generated_files', exist_ok=True)
-        filepath = os.path.join('generated_files', filename)
-        
-        create_article_document(sections, user_data_for_ai, filepath)
-        
-        db.update_balance(telegram_id, -price)
-        
-        document_file = FSInputFile(filepath)
-        
-        if config.MAQOLALAR_CHANNEL_ID:
-            channel_message = await bot.send_document(
-                chat_id=config.MAQOLALAR_CHANNEL_ID,
-                document=document_file,
-                caption=f"""📰 Maqola tayyorlandi
-
-👤 Ismi: {user['full_name']}
-🆔 ID: {telegram_id}
-🔗 Username: @{user['username'] or 'mavjud emas'}
-📝 Mavzu: {topic}
-💰 Narx: {price:,} so'm
-🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
-            )
-            file_link = f"https://t.me/c/{str(config.MAQOLALAR_CHANNEL_ID)[4:]}/{channel_message.message_id}"
-        else:
-            file_link = filepath
-        
-        document_file_user = FSInputFile(filepath)
-        await message.answer_document(
-            document=document_file_user,
-            caption=f"✅ Maqolangiz tayyor!\n\n📝 Mavzu: {topic}\n💰 To'langan: {price:,} so'm"
-        )
-        
-        db.add_order(telegram_id, "maqola", topic, price, file_link)
-        
-    except Exception as e:
-        logger.error(f"Maqola yaratishda xatolik: {e}")
-        await message.answer(
-            "❌ Maqola tayyorlashda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.\n\n"
-            "Balansingiz o'zgartirilmadi.",
-            reply_markup=get_main_menu()
-        )
+    user_data_for_ai = {
+        'topic': topic,
+        'subject': 'Ilmiy tadqiqot',
+        'authors': authors
+    }
+    
+    # Background task yaratish
+    asyncio.create_task(
+        process_article_background(bot, telegram_id, user_data_for_ai, price, topic)
+    )
     
     await state.clear()
 
