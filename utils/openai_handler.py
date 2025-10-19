@@ -76,44 +76,150 @@ Maqola quyidagi tuzilmaga ega bo'lishi kerak:
 
 Maqola ilmiy uslubda, professional tilda yozilishi kerak."""
 
-async def generate_kurs_ishi_full(topic: str, subject: str, fish: str, university: str, course_number: int) -> dict:
-    """OpenAI orqali to'liq kurs ishi yaratish"""
+async def generate_section(section_prompt: str, section_name: str, min_words: int = 2000) -> str:
+    """Bir bo'limni yaratish"""
     try:
-        prompt = KURS_ISH_FULL_PROMPT.format(
-            topic=topic,
-            subject=subject,
-            fish=fish,
-            university=university,
-            course_number=course_number
-        )
-        
         response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Siz professional akademik yozuvchi siz. To'liq, batafsil va yuqori sifatli kurs ishi yarating."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "Siz professional akademik yozuvchi siz. BATAFSIL, KENG va YUQORI SIFATLI matn yarating. Qisqa javoblar qabul qilinmaydi!"},
+                {"role": "user", "content": section_prompt}
             ],
             temperature=0.7,
-            max_tokens=8000,
-            timeout=180.0
+            max_tokens=16000,
+            timeout=300.0
         )
         
         content = response.choices[0].message.content or ""
+        word_count = len(content.split())
         
-        if not content or len(content) < 1000:
-            raise ValueError("AI javob juda qisqa. Iltimos, qaytadan urinib ko'ring.")
+        if not content or word_count < min_words:
+            raise ValueError(f"{section_name} juda qisqa: {word_count} so'z (kerak: {min_words}+ so'z)")
+        
+        logger.info(f"{section_name} yaratildi: {word_count} so'z, {len(content)} belgi")
+        return content
+    
+    except Exception as e:
+        logger.error(f"{section_name} yaratishda xatolik: {e}")
+        raise
+
+async def generate_kurs_ishi_full(topic: str, subject: str, fish: str, university: str, course_number: int) -> dict:
+    """OpenAI orqali to'liq kurs ishi yaratish - har bir bob alohida"""
+    try:
+        logger.info(f"Kurs ishi yaratish boshlandi: {topic}")
+        
+        kirish_prompt = f"""Quyidagi mavzu bo'yicha KIRISH qismini yozing (3-4 bet, ~2500-3000 so'z):
+
+Mavzu: {topic}
+Fan: {subject}
+O'quv yurti: {university}
+
+KIRISH qismida quyidagilar bo'lishi kerak:
+1. Mavzuning dolzarbligi va zamonaviy ahamiyati (1 bet)
+2. Tadqiqotning maqsadi va vazifalari (0.5 bet)
+3. Tadqiqot obyekti va predmeti (0.5 bet)
+4. Qo'llaniladigan tadqiqot metodlari (0.5 bet)
+5. Ishning tuzilmasi va qisqacha mazmuni (0.5-1 bet)
+
+Professional, ilmiy tilda, batafsil yozing."""
+
+        bob1_prompt = f"""Quyidagi mavzu bo'yicha I BOB. NAZARIY ASOSLAR qismini yozing (8-10 bet, ~6000-7000 so'z):
+
+Mavzu: {topic}
+Fan: {subject}
+
+I BOB da quyidagilar bo'lishi kerak:
+1.1. Asosiy tushunchalar va ta'riflar (2-3 bet)
+1.2. Nazariy yondashuvlar va konsepsiyalar (2-3 bet)
+1.3. Xorijiy va mahalliy tajribalar tahlili (2-3 bet)
+1.4. Ilmiy adabiyotlar sharhi (2 bet)
+
+Har bir bo'limda konkret misollar, nazariy asoslar va ilmiy manbalardan kelinma dalillar bering. Professional, akademik tilda yozing."""
+
+        bob2_prompt = f"""Quyidagi mavzu bo'yicha II BOB. AMALIY TAHLIL qismini yozing (10-12 bet, ~7000-8000 so'z):
+
+Mavzu: {topic}
+Fan: {subject}
+
+II BOB da quyidagilar bo'lishi kerak:
+2.1. Joriy holat tahlili (3-4 bet)
+2.2. Muammolar va ularning sabablari (3-4 bet)
+2.3. Raqamli ma'lumotlar va statistik tahlil (2-3 bet)
+2.4. Amaliy misollar va keis-tadqiqotlar (2-3 bet)
+
+Konkret raqamlar, jadvallar, tahlillar va amaliy misollar bilan boyiting. Professional akademik tilda yozing."""
+
+        bob3_prompt = f"""Quyidagi mavzu bo'yicha III BOB. TAKLIFLAR VA YECHIMLAR qismini yozing (8-10 bet, ~6000-7000 so'z):
+
+Mavzu: {topic}
+Fan: {subject}
+
+III BOB da quyidagilar bo'lishi kerak:
+3.1. Muammolarni hal qilish yo'llari (3-4 bet)
+3.2. Takomillashtirilgan yechimlar (2-3 bet)
+3.3. Amalga oshirish mexanizmlari (2-3 bet)
+3.4. Kutilayotgan natijalar va samaradorlik (1-2 bet)
+
+Konkret, amaliy va amalga oshiriladigan yechimlar taqdim eting. Professional akademik tilda yozing."""
+
+        xulosa_prompt = f"""Quyidagi mavzu bo'yicha XULOSA VA TAKLIFLAR qismini yozing (3-4 bet, ~2500-3000 so'z):
+
+Mavzu: {topic}
+Fan: {subject}
+
+XULOSA qismida:
+1. Olingan asosiy xulosalar (1.5-2 bet)
+2. Amaliy tavsiyalar (1 bet)
+3. Kelgusi rivojlanish istiqbollari (0.5-1 bet)
+
+Aniq, ixcham va professional tilda yozing."""
+
+        adabiyotlar_prompt = f"""Quyidagi mavzu bo'yicha FOYDALANILGAN ADABIYOTLAR RO'YXATI yarating (kamida 25 ta manba):
+
+Mavzu: {topic}
+Fan: {subject}
+
+Adabiyotlar ro'yxati quyidagilardan iborat bo'lishi kerak:
+- O'zbek va rus tillaridagi kitoblar (10-12 ta)
+- Xorijiy manbalar va tarjima kitoblar (5-7 ta)
+- Ilmiy maqolalar va jurnallar (5-7 ta)
+- Internet manbalar va rasmiy saytlar (3-5 ta)
+
+Har bir manbani to'g'ri bibliografik formatda yozing."""
+
+        logger.info("Kurs ishining barcha qismlari yaratilmoqda...")
+        
+        kirish = await generate_section(kirish_prompt, "KIRISH", min_words=2000)
+        bob1 = await generate_section(bob1_prompt, "I BOB", min_words=5000)
+        bob2 = await generate_section(bob2_prompt, "II BOB", min_words=6000)
+        bob3 = await generate_section(bob3_prompt, "III BOB", min_words=5000)
+        xulosa = await generate_section(xulosa_prompt, "XULOSA", min_words=2000)
+        adabiyotlar = await generate_section(adabiyotlar_prompt, "ADABIYOTLAR", min_words=500)
+        
+        full_content = f"{kirish}\n\n{bob1}\n\n{bob2}\n\n{bob3}\n\n{xulosa}\n\n{adabiyotlar}"
+        
+        word_count = len(full_content.split())
+        
+        if word_count < 20000:
+            raise ValueError(
+                f"Kurs ishi kerakli hajmga yetmadi!\n"
+                f"Yaratildi: {word_count} so'z\n"
+                f"Kerak: kamida 20,000 so'z (35-40 bet)\n\n"
+                f"Iltimos, qaytadan urinib ko'ring yoki administratorga murojaat qiling."
+            )
         
         result = {
-            "kirish": "",
-            "bob1": "",
-            "bob2": "",
-            "bob3": "",
-            "xulosa": "",
-            "adabiyotlar": "",
-            "full_content": content
+            "kirish": kirish,
+            "bob1": bob1,
+            "bob2": bob2,
+            "bob3": bob3,
+            "xulosa": xulosa,
+            "adabiyotlar": adabiyotlar,
+            "full_content": full_content,
+            "word_count": word_count
         }
         
-        logger.info(f"To'liq kurs ishi muvaffaqiyatli yaratildi: {topic}")
+        logger.info(f"To'liq kurs ishi yaratildi: {word_count} so'z (~{word_count // 300} bet)")
         return result
     
     except openai.APIError as e:

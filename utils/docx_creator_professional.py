@@ -36,7 +36,34 @@ def create_kurs_ishi_docx(content: dict, filename: str, topic: str, fish: str, u
         
         doc.add_page_break()
         
-        _add_content(doc, content["full_content"])
+        if content.get("kirish"):
+            _add_section_heading(doc, "KIRISH")
+            _add_section_content(doc, content["kirish"])
+            doc.add_page_break()
+        
+        if content.get("bob1"):
+            _add_section_heading(doc, "I BOB. NAZARIY ASOSLAR")
+            _add_section_content(doc, content["bob1"])
+            doc.add_page_break()
+        
+        if content.get("bob2"):
+            _add_section_heading(doc, "II BOB. AMALIY TAHLIL")
+            _add_section_content(doc, content["bob2"])
+            doc.add_page_break()
+        
+        if content.get("bob3"):
+            _add_section_heading(doc, "III BOB. TAKLIFLAR VA YECHIMLAR")
+            _add_section_content(doc, content["bob3"])
+            doc.add_page_break()
+        
+        if content.get("xulosa"):
+            _add_section_heading(doc, "XULOSA VA TAKLIFLAR")
+            _add_section_content(doc, content["xulosa"])
+            doc.add_page_break()
+        
+        if content.get("adabiyotlar"):
+            _add_section_heading(doc, "FOYDALANILGAN ADABIYOTLAR RO'YXATI")
+            _add_section_content(doc, content["adabiyotlar"])
         
         filepath = f"generated_files/{filename}.docx"
         doc.save(filepath)
@@ -164,6 +191,42 @@ def _add_mundarija(doc: Document):
         run = p.add_run(page)
         run.font.name = 'Times New Roman'
         run.font.size = Pt(14)
+
+def _add_section_heading(doc: Document, heading_text: str):
+    """Bo'lim sarlavhasini qo'shish"""
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(heading_text)
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+    run.bold = True
+    run.font.all_caps = True
+    
+    paragraph_format = p.paragraph_format
+    paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    paragraph_format.space_after = Pt(6)
+    paragraph_format.space_before = Pt(12)
+
+def _add_section_content(doc: Document, content: str):
+    """Bo'lim kontentini qo'shish"""
+    paragraphs = content.split('\n')
+    
+    for para_text in paragraphs:
+        if not para_text.strip():
+            continue
+        
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        
+        run = p.add_run(para_text.strip())
+        run.font.name = 'Times New Roman'
+        run.font.size = Pt(14)
+        
+        paragraph_format = p.paragraph_format
+        paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+        paragraph_format.first_line_indent = Cm(1.25)
+        paragraph_format.space_after = Pt(0)
+        paragraph_format.space_before = Pt(0)
 
 def _add_content(doc: Document, content: str):
     """Asosiy kontent qo'shish"""

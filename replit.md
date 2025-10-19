@@ -2,7 +2,36 @@
 
 ## Loyiha haqida
 
-Bu Telegram bot foydalanuvchilarga AI (OpenAI GPT-4) yordamida kurs ishi va ilmiy maqola tayyorlashda yordam beradi. Bot balans tizimi, referal dasturi va promokod imkoniyatlariga ega.
+Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida professional kurs ishi va ilmiy maqola tayyorlashda yordam beradi. Bot balans tizimi, referal dasturi va promokod imkoniyatlariga ega.
+
+## Oxirgi O'zgarishlar (2025-10-19)
+
+### 1. FSM (Finite State Machine) orqali to'liq ma'lumot yig'ish
+- Kurs ishi yaratishdan oldin quyidagi ma'lumotlar so'raladi:
+  - F.I.Sh (to'liq ism)
+  - O'quv yurti nomi
+  - Fan nomi
+  - Kurs ishi mavzusi
+  - Kurs raqami (1, 2, 3, 4)
+
+### 2. Professional kurs ishi yaratish (35-40 bet)
+- Har bir bob alohida OpenAI so'rovi orqali yaratiladi (6 ta so'rov):
+  - KIRISH (2000+ so'z, 3-4 bet)
+  - I BOB - Nazariy asoslar (5000+ so'z, 8-10 bet)
+  - II BOB - Amaliy tahlil (6000+ so'z, 10-12 bet)
+  - III BOB - Takliflar va yechimlar (5000+ so'z, 8-10 bet)
+  - XULOSA (2000+ so'z, 3-4 bet)
+  - ADABIYOTLAR (500+ so'z, kamida 25 manba)
+- Jami: 20,000+ so'z (~35-40 bet)
+- Har bir bo'lim uchun uzunlik validatsiyasi mavjud
+
+### 3. Professional DOCX formatlash
+- Titul varaq (O'quv yurti, talaba ma'lumotlari)
+- To'g'ri hoshiyalar (Chap 30mm, O'ng 15mm, Yuqori/Pastki 20mm)
+- Mundarija (barcha boblar)
+- Times New Roman 14pt, 1.5 qator oralig'i
+- Har bir bob alohida sahifada
+- Strukturali tuzilma
 
 ## Arxitektura
 
@@ -10,25 +39,33 @@ Bu Telegram bot foydalanuvchilarga AI (OpenAI GPT-4) yordamida kurs ishi va ilmi
 
 ```
 .
-├── main.py                 # Asosiy bot fayli
-├── config.py              # Konfiguratsiya sozlamalari
-├── database.py            # SQLite database handler
-├── keyboards.py           # Telegram klaviaturalar
+├── main.py                          # Asosiy bot fayli
+├── config.py                       # Konfiguratsiya sozlamalari
+├── database.py                     # SQLite database handler
+├── keyboards.py                    # Telegram klaviaturalar
 ├── handlers/
-│   ├── user_handlers.py   # Foydalanuvchi handlarlari
-│   └── admin_handlers.py  # Admin handlarlari
+│   ├── user_handlers.py            # Foydalanuvchi handlarlari (FSM)
+│   └── admin_handlers.py           # Admin handlarlari
 ├── utils/
-│   ├── openai_handler.py  # OpenAI integratsiyasi
-│   └── docx_creator.py    # DOCX yaratish
-└── .env                   # Environment o'zgaruvchilar
+│   ├── openai_handler.py           # OpenAI integratsiyasi (multi-section)
+│   ├── docx_creator.py             # Oddiy DOCX yaratish
+│   └── docx_creator_professional.py # Professional kurs ishi DOCX
+├── generated_files/                # Yaratilgan fayllar
+└── .env                            # Environment o'zgaruvchilar
 ```
 
 ### Texnologiyalar
 
 - **Aiogram 3.x**: Telegram Bot API uchun Python framework
-- **OpenAI API**: Kurs ishi va maqola yaratish
+- **OpenAI API (GPT-4)**: Kurs ishi va maqola yaratish
+  - Multi-section generation: 6 alohida so'rov
+  - Max tokens: 16,000 har bir bo'lim uchun
+  - Word count validation: 20,000+ so'z
 - **SQLite**: Ma'lumotlar bazasi
-- **python-docx**: DOCX fayllarni yaratish
+- **python-docx**: Professional DOCX fayllarni yaratish
+  - Custom margins, fonts, spacing
+  - Structured sections (title page, TOC, chapters)
+- **docx2pdf**: PDF konvertatsiyasi (kelajakda)
 
 ### Ma'lumotlar bazasi
 
@@ -72,11 +109,16 @@ TOLOV_TASDIQLASH_CHANNEL_ID - To'lov tasdiqlash kanali ID si
 
 ## Keyingi qadamlar
 
+- [x] FSM orqali to'liq ma'lumot yig'ish (F.I.Sh, O'quv yurti, Fan, Kurs)
+- [x] Multi-section OpenAI generation (35-40 bet kurs ishi)
+- [x] Professional DOCX formatlash (titul, mundarija, hoshiyalar)
+- [ ] PDF export funksiyasi (docx2pdf)
 - [ ] Telegram Payment API integratsiyasi (Click, Payme)
 - [ ] Avtomatik backup tizimi
-- [ ] Ko'proq AI modellari (GPT-4o, Claude)
+- [ ] Ko'proq AI modellari (GPT-4o, Claude, o1)
 - [ ] Foydalanuvchi fikr-mulohazalari tizimi
 - [ ] Statistika va hisobotlar eksporti
+- [ ] Plagiarism checker integratsiyasi
 
 ## Muallif
 
