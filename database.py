@@ -279,7 +279,8 @@ class Database:
         cursor = conn.cursor()
         
         cursor.execute("SELECT COUNT(*) FROM users WHERE invited_by = ?", (telegram_id,))
-        count = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        count = result[0] if result else 0
         conn.close()
         
         return count
@@ -290,7 +291,8 @@ class Database:
         cursor = conn.cursor()
         
         cursor.execute("SELECT telegram_id FROM users")
-        users = [row[0] for row in cursor.fetchall()]
+        result = cursor.fetchall()
+        users = [row[0] for row in result if row]
         conn.close()
         
         return users

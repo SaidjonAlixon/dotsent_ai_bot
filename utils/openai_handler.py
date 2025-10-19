@@ -21,7 +21,7 @@ async def generate_kurs_ishi(topic: str) -> str:
             max_tokens=4000
         )
         
-        content = response.choices[0].message.content
+        content = response.choices[0].message.content or ""
         logger.info(f"Kurs ishi muvaffaqiyatli yaratildi: {topic}")
         return content
     
@@ -44,7 +44,7 @@ async def generate_maqola(topic: str) -> str:
             max_tokens=4000
         )
         
-        content = response.choices[0].message.content
+        content = response.choices[0].message.content or ""
         logger.info(f"Maqola muvaffaqiyatli yaratildi: {topic}")
         return content
     
