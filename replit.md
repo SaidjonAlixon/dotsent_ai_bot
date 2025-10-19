@@ -29,6 +29,20 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 - O'chirishdan keyin ro'yxat avtomatik yangilanadi
 - Database: `delete_promocode()` funksiyasi qo'shildi
 
+### Xizmat narxi, ma'lumot va balans tekshiruvi tizimi ✅
+- "🧾 Kurs ishi yozish" va "📰 Maqola yozish" tugmalari yangilandi
+- Tugma bosilganda:
+  1. **Xizmat ma'lumoti** ko'rsatiladi (narx, muddat, tafsilotlar)
+  2. **"📄 Namunani ko'rish"** tugmasi - xizmat namunasi
+  3. **"✅ Roziman"** tugmasi - xizmatni qabul qilish
+  4. **"🔙 Orqaga"** tugmasi - bekor qilish
+- "Roziman" bosganda:
+  - **Balans yetarli** bo'lsa → FSM boshlaydi (F.I.Sh, Mavzu...)
+  - **Balans yetarli emas** bo'lsa → balans to'ldirish oynasi:
+    - Hozirgi balans va yetmayotgan summa
+    - "💵 Balansni to'ldirish" tugmasi
+- Balans to'ldirilgandan keyin, foydalanuvchi qayta tugmani bosishi kerak
+
 ## O'zgarishlar (2025-10-19)
 
 ### 3. Asenkron (Parallel) ishlov berish tizimi ✅

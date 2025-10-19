@@ -102,3 +102,29 @@ def get_promo_usage_type_buttons():
         resize_keyboard=True
     )
     return keyboard
+
+def get_service_info_buttons(service_type: str):
+    """Xizmat ma'lumoti tugmalari"""
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📄 Namunani ko'rish", callback_data=f"view_sample_{service_type}")],
+            [InlineKeyboardButton(text="✅ Roziman", callback_data=f"accept_service_{service_type}")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_menu")]
+        ]
+    )
+    return keyboard
+
+def get_payment_amount_buttons():
+    """To'lov miqdori tugmalari"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="10,000 so'm"), KeyboardButton(text="20,000 so'm")],
+            [KeyboardButton(text="50,000 so'm"), KeyboardButton(text="100,000 so'm")],
+            [KeyboardButton(text="200,000 so'm"), KeyboardButton(text="500,000 so'm")],
+            [KeyboardButton(text="❌ Bekor qilish")]
+        ],
+        resize_keyboard=True
+    )
+    return keyboard

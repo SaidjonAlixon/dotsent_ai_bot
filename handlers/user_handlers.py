@@ -8,7 +8,8 @@ import logging
 import asyncio
 
 from database import Database
-from keyboards import get_main_menu, get_cancel_button, get_balance_buttons
+from keyboards import (get_main_menu, get_cancel_button, get_balance_buttons, 
+                        get_service_info_buttons, get_payment_amount_buttons)
 from utils.course_writer import generate_course_work
 from utils.document_generator import create_word_document
 from utils.article_writer import generate_article
@@ -185,14 +186,28 @@ Boshlash uchun quyidagi tugmalardan birini tanlang! 👇"""
 
 @router.message(F.text == "🧾 Kurs ishi yozish")
 async def kurs_ishi_handler(message: Message, state: FSMContext):
-    """Kurs ishi yozish"""
-    await message.answer(
-        "📚 Kurs ishi tayyorlash boshlandi!\n\n"
-        "👤 F.I.Sh. (to'liq ismingiz) kiriting:\n\n"
-        "Masalan: Abdullayev Akmal Rustamovich",
-        reply_markup=get_cancel_button()
+    """Kurs ishi yozish - narx va ma'lumot"""
+    kurs_ishi_price = int(db.get_setting("kurs_ishi_price", "50000"))
+    
+    info_text = (
+        "🧾 **Kurs ishi yozish**\n\n"
+        "📊 **Xizmat haqida:**\n"
+        "• Professional akademik kurs ishi\n"
+        "• 40-45 sahifa (16,000-17,000 so'z)\n"
+        "• GPT-4o Mini yordamida yaratiladi\n"
+        "• O'zbekiston standartlariga mos\n"
+        "• Titul, Reja, Mundarija, Ilovalar\n"
+        "• Times New Roman 14pt, 1.5 interval\n\n"
+        f"💰 **Narx:** {kurs_ishi_price:,} so'm\n\n"
+        "⏱ **Tayyor bo'lish muddati:** 15-30 daqiqa\n\n"
+        "📄 Namunani ko'rish uchun tugmani bosing."
     )
-    await state.set_state(UserStates.waiting_for_kurs_fish)
+    
+    await message.answer(
+        info_text,
+        reply_markup=get_service_info_buttons("kurs"),
+        parse_mode="Markdown"
+    )
 
 @router.message(UserStates.waiting_for_kurs_fish)
 async def process_kurs_fish(message: Message, state: FSMContext):
@@ -330,13 +345,28 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
 
 @router.message(F.text == "📰 Maqola yozish")
 async def maqola_handler(message: Message, state: FSMContext):
-    """Maqola yozish"""
-    await message.answer(
-        "📝 Maqola mavzusini kiriting:\n\n"
-        "Masalan: Raqamli iqtisodiyotda blockchain texnologiyasining o'rni",
-        reply_markup=get_cancel_button()
+    """Maqola yozish - narx va ma'lumot"""
+    maqola_price = int(db.get_setting("maqola_price", "30000"))
+    
+    info_text = (
+        "📰 **Ilmiy maqola yozish**\n\n"
+        "📊 **Xizmat haqida:**\n"
+        "• Professional ilmiy maqola\n"
+        "• 7-10 sahifa\n"
+        "• GPT-4o Mini yordamida yaratiladi\n"
+        "• Annotatsiya (3 tilda: O'zbek, Ingliz, Rus)\n"
+        "• Kalit so'zlar, Adabiyotlar (APA format)\n"
+        "• Times New Roman 14pt, 1.5 interval\n\n"
+        f"💰 **Narx:** {maqola_price:,} so'm\n\n"
+        "⏱ **Tayyor bo'lish muddati:** 10-20 daqiqa\n\n"
+        "📄 Namunani ko'rish uchun tugmani bosing."
     )
-    await state.set_state(UserStates.waiting_for_maqola_topic)
+    
+    await message.answer(
+        info_text,
+        reply_markup=get_service_info_buttons("maqola"),
+        parse_mode="Markdown"
+    )
 
 @router.message(UserStates.waiting_for_maqola_topic)
 async def process_maqola_topic(message: Message, state: FSMContext):
@@ -660,6 +690,101 @@ async def process_promocode(message: Message, state: FSMContext):
     )
     
     await state.clear()
+
+@router.callback_query(F.data.startswith("view_sample_"))
+async def view_sample_callback(callback: CallbackQuery):
+    """Namunani ko'rish"""
+    service_type = callback.data.split("_")[-1]
+    
+    if service_type == "kurs":
+        sample_text = (
+            "📄 **Kurs ishi namunasi:**\n\n"
+            "Namuna hozircha tayyorlanmoqda...\n\n"
+            "Siz yaratgan kurs ishi quyidagilarni o'z ichiga oladi:\n"
+            "• Titul varaq\n"
+            "• Reja\n"
+            "• KIRISH (3-4 bet)\n"
+            "• I BOB - Nazariy asoslar (8-10 bet)\n"
+            "• II BOB - Amaliy tahlil (10-12 bet)\n"
+            "• III BOB - Takliflar (8-10 bet)\n"
+            "• XULOSA (3-4 bet)\n"
+            "• ADABIYOTLAR (25+ manba)\n"
+            "• ILOVALAR\n"
+            "• MUNDARIJA"
+        )
+    else:
+        sample_text = (
+            "📄 **Maqola namunasi:**\n\n"
+            "Namuna hozircha tayyorlanmoqda...\n\n"
+            "Siz yaratgan maqola quyidagilarni o'z ichiga oladi:\n"
+            "• Sarlavha va muallif ma'lumotlari\n"
+            "• Annotatsiya (3 tilda)\n"
+            "• Kalit so'zlar (3 tilda)\n"
+            "• KIRISH\n"
+            "• TADQIQOT USLUBLARI\n"
+            "• NATIJALAR VA MUHOKAMA\n"
+            "• XULOSA\n"
+            "• FOYDALANILGAN ADABIYOTLAR (APA format)"
+        )
+    
+    await callback.answer()
+    await callback.message.answer(sample_text, parse_mode="Markdown")
+
+@router.callback_query(F.data.startswith("accept_service_"))
+async def accept_service_callback(callback: CallbackQuery, state: FSMContext):
+    """Xizmatni qabul qilish - balans tekshiruvi"""
+    service_type = callback.data.split("_")[-1]
+    telegram_id = callback.from_user.id
+    user = db.get_user(telegram_id)
+    
+    if service_type == "kurs":
+        price = int(db.get_setting("kurs_ishi_price", "50000"))
+        service_name = "Kurs ishi"
+    else:
+        price = int(db.get_setting("maqola_price", "30000"))
+        service_name = "Maqola"
+    
+    # Balans tekshiruvi
+    if user['balance'] >= price:
+        # Balans yetarli - FSM boshlash
+        await callback.answer()
+        if service_type == "kurs":
+            await callback.message.answer(
+                "📚 Kurs ishi tayyorlash boshlandi!\n\n"
+                "👤 F.I.Sh. (to'liq ismingiz) kiriting:\n\n"
+                "Masalan: Abdullayev Akmal Rustamovich",
+                reply_markup=get_cancel_button()
+            )
+            await state.set_state(UserStates.waiting_for_kurs_fish)
+        else:
+            await callback.message.answer(
+                "📝 Maqola mavzusini kiriting:\n\n"
+                "Masalan: Raqamli iqtisodiyotda blockchain texnologiyasining o'rni",
+                reply_markup=get_cancel_button()
+            )
+            await state.set_state(UserStates.waiting_for_maqola_topic)
+    else:
+        # Balans yetarli emas
+        needed = price - user['balance']
+        await callback.answer()
+        await callback.message.answer(
+            f"⚠️ **Balans yetarli emas!**\n\n"
+            f"💰 Hozirgi balans: {user['balance']:,} so'm\n"
+            f"💵 Xizmat narxi: {price:,} so'm\n"
+            f"❌ Yetmayapti: {needed:,} so'm\n\n"
+            "📲 Iltimos, hisobingizni to'ldiring:",
+            reply_markup=get_balance_buttons(),
+            parse_mode="Markdown"
+        )
+
+@router.callback_query(F.data == "back_to_menu")
+async def back_to_menu_callback(callback: CallbackQuery):
+    """Asosiy menyuga qaytish"""
+    await callback.answer()
+    await callback.message.answer(
+        "Asosiy menyu:",
+        reply_markup=get_main_menu()
+    )
 
 @router.message(F.text == "❓ Yordam")
 async def help_handler(message: Message):
