@@ -263,10 +263,10 @@ class Database:
                 "code": row[1],
                 "work_type": row[2],
                 "discount_percent": row[3],
-                "usage_type": row[4] if len(row) > 4 else "unlimited",
-                "used_by": row[5] if len(row) > 5 else "[]",
-                "expiry_date": row[6] if len(row) > 6 else None,
-                "active": row[7] if len(row) > 7 else 1
+                "expiry_date": row[4] if len(row) > 4 else None,
+                "active": row[5] if len(row) > 5 else 1,
+                "usage_type": row[6] if len(row) > 6 else "unlimited",
+                "used_by": row[7] if len(row) > 7 else "[]"
             }
         return None
     
@@ -286,10 +286,10 @@ class Database:
                 "code": row[1],
                 "work_type": row[2],
                 "discount_percent": row[3],
-                "usage_type": row[4] if len(row) > 4 else "unlimited",
-                "used_by": row[5] if len(row) > 5 else "[]",
-                "expiry_date": row[6] if len(row) > 6 else None,
-                "active": row[7] if len(row) > 7 else 1
+                "expiry_date": row[4] if len(row) > 4 else None,
+                "active": row[5] if len(row) > 5 else 1,
+                "usage_type": row[6] if len(row) > 6 else "unlimited",
+                "used_by": row[7] if len(row) > 7 else "[]"
             })
         
         return promocodes
