@@ -15,23 +15,29 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
   - Kurs raqami (1, 2, 3, 4)
 
 ### 2. Professional kurs ishi yaratish (35-40 bet)
-- Har bir bob alohida OpenAI so'rovi orqali yaratiladi (6 ta so'rov):
-  - KIRISH (2000+ so'z, 3-4 bet)
-  - I BOB - Nazariy asoslar (5000+ so'z, 8-10 bet)
-  - II BOB - Amaliy tahlil (6000+ so'z, 10-12 bet)
-  - III BOB - Takliflar va yechimlar (5000+ so'z, 8-10 bet)
-  - XULOSA (2000+ so'z, 3-4 bet)
-  - ADABIYOTLAR (500+ so'z, kamida 25 manba)
-- Jami: 20,000+ so'z (~35-40 bet)
+- Har bir bob alohida OpenAI so'rovi orqali yaratiladi (7 ta so'rov):
+  - KIRISH (1200+ so'z, 3-4 bet) - 3,000 tokens
+  - I BOB - Nazariy asoslar (2500+ so'z, 8-10 bet) - 5,000 tokens
+  - II BOB - Amaliy tahlil (3000+ so'z, 10-12 bet) - 6,000 tokens
+  - III BOB - Takliflar va yechimlar (2500+ so'z, 8-10 bet) - 5,000 tokens
+  - XULOSA (1200+ so'z, 3-4 bet) - 3,000 tokens
+  - ADABIYOTLAR (400+ so'z, kamida 25 manba) - 2,000 tokens
+  - ILOVALAR (300+ so'z) - 2,000 tokens
+- **Jami: 11,000-14,000 so'z (~35-40 bet)**
+- **Token sarfi: ~26,000 tokens** (quota xatoligini oldini olish uchun optimallashtirilgan)
 - Har bir bo'lim uchun uzunlik validatsiyasi mavjud
 
-### 3. Professional DOCX formatlash
-- Titul varaq (O'quv yurti, talaba ma'lumotlari)
-- To'g'ri hoshiyalar (Chap 30mm, O'ng 15mm, Yuqori/Pastki 20mm)
-- Mundarija (barcha boblar)
+### 3. Professional DOCX formatlash (O'zbekiston standartlari)
+- **1. Titul varaq** (O'quv yurti, talaba ma'lumotlari, fan, mavzu, kurs)
+- **2. Reja** (barcha boblar ro'yxati)
+- **3. Kirish, 3 Bob, Xulosa**
+- **4. Adabiyotlar** (kamida 25 manba)
+- **5. Ilovalar** (jadvallar, grafiklar)
+- **6. Mundarija** (sahifa raqamlari bilan, oxirida)
+- To'g'ri hoshiyalar: Chap 30mm, O'ng 15mm, Yuqori/Pastki 20mm
 - Times New Roman 14pt, 1.5 qator oralig'i
 - Har bir bob alohida sahifada
-- Strukturali tuzilma
+- A4 format
 
 ## Arxitektura
 
@@ -58,9 +64,10 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 - **Aiogram 3.x**: Telegram Bot API uchun Python framework
 - **OpenAI API (GPT-4)**: Kurs ishi va maqola yaratish
-  - Multi-section generation: 6 alohida so'rov
-  - Max tokens: 16,000 har bir bo'lim uchun
-  - Word count validation: 20,000+ so'z
+  - Multi-section generation: 7 alohida so'rov (KIRISH, 3 BOB, XULOSA, ADABIYOTLAR, ILOVALAR)
+  - Token sarfi optimizatsiyasi: ~26,000 tokens (quota xatoligini oldini olish)
+  - Word count validation: 11,000-14,000 so'z (35-40 bet)
+  - Har bir bo'lim uchun individual max_tokens sozlamalari
 - **SQLite**: Ma'lumotlar bazasi
 - **python-docx**: Professional DOCX fayllarni yaratish
   - Custom margins, fonts, spacing
@@ -110,14 +117,18 @@ TOLOV_TASDIQLASH_CHANNEL_ID - To'lov tasdiqlash kanali ID si
 ## Keyingi qadamlar
 
 - [x] FSM orqali to'liq ma'lumot yig'ish (F.I.Sh, O'quv yurti, Fan, Kurs)
-- [x] Multi-section OpenAI generation (35-40 bet kurs ishi)
-- [x] Professional DOCX formatlash (titul, mundarija, hoshiyalar)
+- [x] Multi-section OpenAI generation (7 bo'lim, 11,000-14,000 so'z)
+- [x] Token optimizatsiyasi (26,000 tokens - quota xatoligini bartaraf qilish)
+- [x] Professional DOCX formatlash (titul, reja, mundarija, ilovalar)
+- [x] O'zbekiston standartlariga moslashtirilgan format
+- [ ] "Yana yozish" va "Asosiy menyu" tugmalari
+- [ ] "Namuna ishni ko'rish" funksiyasi
 - [ ] PDF export funksiyasi (docx2pdf)
 - [ ] Telegram Payment API integratsiyasi (Click, Payme)
+- [ ] Ko'p tillilik (🇺🇿 O'zbek, 🇷🇺 Rus)
 - [ ] Avtomatik backup tizimi
 - [ ] Ko'proq AI modellari (GPT-4o, Claude, o1)
 - [ ] Foydalanuvchi fikr-mulohazalari tizimi
-- [ ] Statistika va hisobotlar eksporti
 - [ ] Plagiarism checker integratsiyasi
 
 ## Muallif

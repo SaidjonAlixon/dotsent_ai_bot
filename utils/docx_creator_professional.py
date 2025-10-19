@@ -32,7 +32,7 @@ def create_kurs_ishi_docx(content: dict, filename: str, topic: str, fish: str, u
         
         doc.add_page_break()
         
-        _add_mundarija(doc)
+        _add_reja(doc)
         
         doc.add_page_break()
         
@@ -64,6 +64,14 @@ def create_kurs_ishi_docx(content: dict, filename: str, topic: str, fish: str, u
         if content.get("adabiyotlar"):
             _add_section_heading(doc, "FOYDALANILGAN ADABIYOTLAR RO'YXATI")
             _add_section_content(doc, content["adabiyotlar"])
+            doc.add_page_break()
+        
+        if content.get("ilovalar"):
+            _add_section_heading(doc, "ILOVALAR")
+            _add_section_content(doc, content["ilovalar"])
+            doc.add_page_break()
+        
+        _add_mundarija(doc)
         
         filepath = f"generated_files/{filename}.docx"
         doc.save(filepath)
@@ -153,8 +161,52 @@ def _add_title_page(doc: Document, topic: str, fish: str, university: str, subje
     run.font.size = Pt(14)
     run.bold = True
 
+def _add_reja(doc: Document):
+    """Reja (Plan) qo'shish - titul varaqdan keyin"""
+    
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run("REJA")
+    run.font.name = 'Times New Roman'
+    run.font.size = Pt(14)
+    run.bold = True
+    run.font.all_caps = True
+    
+    doc.add_paragraph()
+    
+    reja_items = [
+        "KIRISH",
+        "I BOB. NAZARIY ASOSLAR",
+        "    1.1. Asosiy tushunchalar va ta'riflar",
+        "    1.2. Nazariy yondashuvlar va konsepsiyalar",
+        "    1.3. Xorijiy va mahalliy tajribalar tahlili",
+        "    1.4. Ilmiy adabiyotlar sharhi",
+        "II BOB. AMALIY TAHLIL",
+        "    2.1. Joriy holat tahlili",
+        "    2.2. Muammolar va ularning sabablari",
+        "    2.3. Raqamli ma'lumotlar va statistik tahlil",
+        "    2.4. Amaliy misollar va keis-tadqiqotlar",
+        "III BOB. TAKLIFLAR VA YECHIMLAR",
+        "    3.1. Muammolarni hal qilish yo'llari",
+        "    3.2. Takomillashtirilgan yechimlar",
+        "    3.3. Amalga oshirish mexanizmlari",
+        "    3.4. Kutilayotgan natijalar va samaradorlik",
+        "XULOSA VA TAKLIFLAR",
+        "FOYDALANILGAN ADABIYOTLAR RO'YXATI",
+        "ILOVALAR",
+    ]
+    
+    for item in reja_items:
+        p = doc.add_paragraph()
+        run = p.add_run(item)
+        run.font.name = 'Times New Roman'
+        run.font.size = Pt(14)
+        
+        paragraph_format = p.paragraph_format
+        paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+
 def _add_mundarija(doc: Document):
-    """Mundarija qo'shish"""
+    """Mundarija qo'shish - oxirida, sahifa raqamlari bilan"""
     
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -162,22 +214,30 @@ def _add_mundarija(doc: Document):
     run.font.name = 'Times New Roman'
     run.font.size = Pt(14)
     run.bold = True
+    run.font.all_caps = True
     
     doc.add_paragraph()
     
     mundarija_items = [
         ("KIRISH", "3"),
-        ("I BOB. NAZARIY ASOSLAR", "6"),
-        ("    1.1. Asosiy tushunchalar va ta'riflar", "6"),
+        ("I BOB. NAZARIY ASOSLAR", "7"),
+        ("    1.1. Asosiy tushunchalar va ta'riflar", "7"),
         ("    1.2. Nazariy yondashuvlar va konsepsiyalar", "10"),
-        ("II BOB. AMALIY TAHLIL", "15"),
-        ("    2.1. Joriy holat tahlili", "15"),
+        ("    1.3. Xorijiy va mahalliy tajribalar tahlili", "12"),
+        ("    1.4. Ilmiy adabiyotlar sharhi", "14"),
+        ("II BOB. AMALIY TAHLIL", "16"),
+        ("    2.1. Joriy holat tahlili", "16"),
         ("    2.2. Muammolar va ularning sabablari", "20"),
-        ("III BOB. TAKLIFLAR VA YECHIMLAR", "25"),
-        ("    3.1. Takomillashtirilgan yechimlar", "25"),
-        ("    3.2. Amalga oshirish mexanizmlari", "30"),
-        ("XULOSA VA TAKLIFLAR", "35"),
-        ("FOYDALANILGAN ADABIYOTLAR RO'YXATI", "38"),
+        ("    2.3. Raqamli ma'lumotlar va statistik tahlil", "22"),
+        ("    2.4. Amaliy misollar va keis-tadqiqotlar", "25"),
+        ("III BOB. TAKLIFLAR VA YECHIMLAR", "28"),
+        ("    3.1. Muammolarni hal qilish yo'llari", "28"),
+        ("    3.2. Takomillashtirilgan yechimlar", "30"),
+        ("    3.3. Amalga oshirish mexanizmlari", "32"),
+        ("    3.4. Kutilayotgan natijalar va samaradorlik", "34"),
+        ("XULOSA VA TAKLIFLAR", "36"),
+        ("FOYDALANILGAN ADABIYOTLAR RO'YXATI", "39"),
+        ("ILOVALAR", "42"),
     ]
     
     for item, page in mundarija_items:
@@ -191,6 +251,9 @@ def _add_mundarija(doc: Document):
         run = p.add_run(page)
         run.font.name = 'Times New Roman'
         run.font.size = Pt(14)
+        
+        paragraph_format = p.paragraph_format
+        paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
 
 def _add_section_heading(doc: Document, heading_text: str):
     """Bo'lim sarlavhasini qo'shish"""

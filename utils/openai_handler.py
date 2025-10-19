@@ -76,18 +76,18 @@ Maqola quyidagi tuzilmaga ega bo'lishi kerak:
 
 Maqola ilmiy uslubda, professional tilda yozilishi kerak."""
 
-async def generate_section(section_prompt: str, section_name: str, min_words: int = 2000) -> str:
+async def generate_section(section_prompt: str, section_name: str, min_words: int = 1000, max_tokens: int = 4000) -> str:
     """Bir bo'limni yaratish"""
     try:
         response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Siz professional akademik yozuvchi siz. BATAFSIL, KENG va YUQORI SIFATLI matn yarating. Qisqa javoblar qabul qilinmaydi!"},
+                {"role": "system", "content": "Siz professional akademik yozuvchi siz. Batafsil, ilmiy va yuqori sifatli matn yarating."},
                 {"role": "user", "content": section_prompt}
             ],
             temperature=0.7,
-            max_tokens=16000,
-            timeout=300.0
+            max_tokens=max_tokens,
+            timeout=180.0
         )
         
         content = response.choices[0].message.content or ""
@@ -108,7 +108,7 @@ async def generate_kurs_ishi_full(topic: str, subject: str, fish: str, universit
     try:
         logger.info(f"Kurs ishi yaratish boshlandi: {topic}")
         
-        kirish_prompt = f"""Quyidagi mavzu bo'yicha KIRISH qismini yozing (3-4 bet, ~2500-3000 so'z):
+        kirish_prompt = f"""Quyidagi mavzu bo'yicha KIRISH qismini yozing (3-4 bet, ~1500 so'z):
 
 Mavzu: {topic}
 Fan: {subject}
@@ -123,7 +123,7 @@ KIRISH qismida quyidagilar bo'lishi kerak:
 
 Professional, ilmiy tilda, batafsil yozing."""
 
-        bob1_prompt = f"""Quyidagi mavzu bo'yicha I BOB. NAZARIY ASOSLAR qismini yozing (8-10 bet, ~6000-7000 so'z):
+        bob1_prompt = f"""Quyidagi mavzu bo'yicha I BOB. NAZARIY ASOSLAR qismini yozing (8-10 bet, ~3000 so'z):
 
 Mavzu: {topic}
 Fan: {subject}
@@ -136,7 +136,7 @@ I BOB da quyidagilar bo'lishi kerak:
 
 Har bir bo'limda konkret misollar, nazariy asoslar va ilmiy manbalardan kelinma dalillar bering. Professional, akademik tilda yozing."""
 
-        bob2_prompt = f"""Quyidagi mavzu bo'yicha II BOB. AMALIY TAHLIL qismini yozing (10-12 bet, ~7000-8000 so'z):
+        bob2_prompt = f"""Quyidagi mavzu bo'yicha II BOB. AMALIY TAHLIL qismini yozing (10-12 bet, ~3500 so'z):
 
 Mavzu: {topic}
 Fan: {subject}
@@ -149,7 +149,7 @@ II BOB da quyidagilar bo'lishi kerak:
 
 Konkret raqamlar, jadvallar, tahlillar va amaliy misollar bilan boyiting. Professional akademik tilda yozing."""
 
-        bob3_prompt = f"""Quyidagi mavzu bo'yicha III BOB. TAKLIFLAR VA YECHIMLAR qismini yozing (8-10 bet, ~6000-7000 so'z):
+        bob3_prompt = f"""Quyidagi mavzu bo'yicha III BOB. TAKLIFLAR VA YECHIMLAR qismini yozing (8-10 bet, ~3000 so'z):
 
 Mavzu: {topic}
 Fan: {subject}
@@ -162,7 +162,7 @@ III BOB da quyidagilar bo'lishi kerak:
 
 Konkret, amaliy va amalga oshiriladigan yechimlar taqdim eting. Professional akademik tilda yozing."""
 
-        xulosa_prompt = f"""Quyidagi mavzu bo'yicha XULOSA VA TAKLIFLAR qismini yozing (3-4 bet, ~2500-3000 so'z):
+        xulosa_prompt = f"""Quyidagi mavzu bo'yicha XULOSA VA TAKLIFLAR qismini yozing (3-4 bet, ~1500 so'z):
 
 Mavzu: {topic}
 Fan: {subject}
@@ -189,24 +189,42 @@ Har bir manbani to'g'ri bibliografik formatda yozing."""
 
         logger.info("Kurs ishining barcha qismlari yaratilmoqda...")
         
-        kirish = await generate_section(kirish_prompt, "KIRISH", min_words=2000)
-        bob1 = await generate_section(bob1_prompt, "I BOB", min_words=5000)
-        bob2 = await generate_section(bob2_prompt, "II BOB", min_words=6000)
-        bob3 = await generate_section(bob3_prompt, "III BOB", min_words=5000)
-        xulosa = await generate_section(xulosa_prompt, "XULOSA", min_words=2000)
-        adabiyotlar = await generate_section(adabiyotlar_prompt, "ADABIYOTLAR", min_words=500)
+        kirish = await generate_section(kirish_prompt, "KIRISH", min_words=1200, max_tokens=3000)
+        bob1 = await generate_section(bob1_prompt, "I BOB", min_words=2500, max_tokens=5000)
+        bob2 = await generate_section(bob2_prompt, "II BOB", min_words=3000, max_tokens=6000)
+        bob3 = await generate_section(bob3_prompt, "III BOB", min_words=2500, max_tokens=5000)
+        xulosa = await generate_section(xulosa_prompt, "XULOSA", min_words=1200, max_tokens=3000)
+        adabiyotlar = await generate_section(adabiyotlar_prompt, "ADABIYOTLAR", min_words=400, max_tokens=2000)
         
-        full_content = f"{kirish}\n\n{bob1}\n\n{bob2}\n\n{bob3}\n\n{xulosa}\n\n{adabiyotlar}"
+        ilovalar_prompt = f"""Quyidagi mavzu bo'yicha ILOVALAR qismini yarating (~500 so'z):
+
+Mavzu: {topic}
+Fan: {subject}
+
+ILOVALAR qismida:
+- Jadvallar, grafiklar, diagrammalar tavsifi
+- Qo'shimcha hujjatlar
+- Statistik ma'lumotlar
+- Amaliy materiallar
+
+Professional tarzda yozing."""
+
+        ilovalar = await generate_section(ilovalar_prompt, "ILOVALAR", min_words=300, max_tokens=2000)
+        
+        full_content = f"{kirish}\n\n{bob1}\n\n{bob2}\n\n{bob3}\n\n{xulosa}\n\n{adabiyotlar}\n\n{ilovalar}"
         
         word_count = len(full_content.split())
         
-        if word_count < 20000:
+        if word_count < 11000:
             raise ValueError(
                 f"Kurs ishi kerakli hajmga yetmadi!\n"
                 f"Yaratildi: {word_count} so'z\n"
-                f"Kerak: kamida 20,000 so'z (35-40 bet)\n\n"
-                f"Iltimos, qaytadan urinib ko'ring yoki administratorga murojaat qiling."
+                f"Kerak: 11,000-14,000 so'z (35-40 bet)\n\n"
+                f"Iltimos, qaytadan urinib ko'ring."
             )
+        
+        if word_count > 16000:
+            logger.warning(f"Kurs ishi juda uzun: {word_count} so'z (optimal: 11,000-14,000)")
         
         result = {
             "kirish": kirish,
@@ -215,6 +233,7 @@ Har bir manbani to'g'ri bibliografik formatda yozing."""
             "bob3": bob3,
             "xulosa": xulosa,
             "adabiyotlar": adabiyotlar,
+            "ilovalar": ilovalar,
             "full_content": full_content,
             "word_count": word_count
         }
