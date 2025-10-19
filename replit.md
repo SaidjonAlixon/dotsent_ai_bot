@@ -6,6 +6,14 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
+### YANGI: AI orqali mavzuga asoslangan REJA yaratish
+- REJA endi mavzu va fanga qarab GPT-4o Mini orqali yaratiladi
+- Har bir bob va band sarlavhasi mavzuga to'liq mos keladi
+- Dinamik va professional reja tuzilishi
+- Agar xatolik bo'lsa, standart reja qaytariladi
+
+## O'zgarishlar (2025-10-19)
+
 ### 0. GPT-4o Mini modeliga o'tish
 - `gpt-4o` dan `gpt-4o-mini` modeliga o'tildi (eng yangi va samarali mini model)
 - **ARZONROQ**: $0.15/1M input tokens, $0.60/1M output tokens
