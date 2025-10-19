@@ -76,3 +76,28 @@ def get_work_type_buttons():
         ]
     )
     return keyboard
+
+def get_promo_work_type_buttons():
+    """Promokod uchun ish turi tanlash"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🧾 Kurs ishi")],
+            [KeyboardButton(text="📰 Maqola")],
+            [KeyboardButton(text="❌ Bekor qilish")]
+        ],
+        resize_keyboard=True
+    )
+    return keyboard
+
+def get_promo_usage_type_buttons():
+    """Promokod foydalanish turi"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🔄 1 martalik (1 ta foydalanuvchi)")],
+            [KeyboardButton(text="👥 Har bir foydalanuvchi uchun 1 marta")],
+            [KeyboardButton(text="♾️ Cheksiz foydalanish")],
+            [KeyboardButton(text="❌ Bekor qilish")]
+        ],
+        resize_keyboard=True
+    )
+    return keyboard

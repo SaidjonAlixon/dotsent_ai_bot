@@ -70,10 +70,25 @@ class Database:
             code TEXT UNIQUE NOT NULL,
             work_type TEXT NOT NULL,
             discount_percent INTEGER NOT NULL,
+            usage_type TEXT DEFAULT 'unlimited',
+            used_by TEXT DEFAULT '[]',
             expiry_date TEXT,
             active INTEGER DEFAULT 1
         )
         """)
+        
+        # Eski promokodlar uchun yangi ustunlarni qo'shish
+        try:
+            cursor.execute("ALTER TABLE promocodes ADD COLUMN usage_type TEXT DEFAULT 'unlimited'")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        try:
+            cursor.execute("ALTER TABLE promocodes ADD COLUMN used_by TEXT DEFAULT '[]'")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
         
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS settings (
@@ -216,16 +231,16 @@ class Database:
             }
         return None
     
-    def add_promocode(self, code: str, work_type: str, discount_percent: int, expiry_date: str) -> bool:
+    def add_promocode(self, code: str, work_type: str, discount_percent: int, expiry_date: str = None, usage_type: str = "unlimited") -> bool:
         """Promokod qo'shish"""
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             
             cursor.execute("""
-            INSERT INTO promocodes (code, work_type, discount_percent, expiry_date)
-            VALUES (?, ?, ?, ?)
-            """, (code, work_type, discount_percent, expiry_date))
+            INSERT INTO promocodes (code, work_type, discount_percent, expiry_date, usage_type, used_by)
+            VALUES (?, ?, ?, ?, ?, '[]')
+            """, (code, work_type, discount_percent, expiry_date, usage_type))
             
             conn.commit()
             conn.close()

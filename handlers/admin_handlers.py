@@ -7,7 +7,8 @@ from datetime import datetime
 import logging
 
 from database import Database
-from keyboards import get_admin_menu, get_main_menu, get_cancel_button
+from keyboards import (get_admin_menu, get_main_menu, get_cancel_button, 
+                        get_promo_work_type_buttons, get_promo_usage_type_buttons)
 import config
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,11 @@ class AdminStates(StatesGroup):
     waiting_for_price_type = State()
     waiting_for_price_amount = State()
     waiting_for_promocode_data = State()
+    # Promokod yangi state'lari
+    waiting_for_promo_work_type = State()
+    waiting_for_promo_code = State()
+    waiting_for_promo_discount = State()
+    waiting_for_promo_usage_type = State()
 
 def is_admin(user_id: int) -> bool:
     """Admin ekanligini tekshirish"""
@@ -358,65 +364,133 @@ async def price_management_update(message: Message, state: FSMContext):
     await state.clear()
 
 @router.message(F.text == "🎟 Promokod yaratish")
-async def promocode_create(message: Message, state: FSMContext):
-    """Promokod yaratish"""
+async def promocode_create_start(message: Message, state: FSMContext):
+    """Promokod yaratishni boshlash"""
     if not is_admin(message.from_user.id):
         return
     
     await message.answer(
         "🎟 Promokod yaratish\n\n"
-        "Quyidagi formatda ma'lumot kiriting:\n\n"
-        "Kod Turi Chegirma Muddat\n\n"
-        "Masalan:\n"
-        "YANGI2025 kurs_ishi 20 2025-12-31\n\n"
-        "Turi: kurs_ishi yoki maqola\n"
-        "Chegirma: foizda (1-100)\n"
-        "Muddat: YYYY-MM-DD formatda",
+        "❓ Qaysi ish uchun promokod yaratmoqchisiz?",
+        reply_markup=get_promo_work_type_buttons()
+    )
+    await state.set_state(AdminStates.waiting_for_promo_work_type)
+
+@router.message(AdminStates.waiting_for_promo_work_type)
+async def promocode_work_type(message: Message, state: FSMContext):
+    """Ish turini qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_admin_menu())
+        return
+    
+    if message.text == "🧾 Kurs ishi":
+        work_type = "kurs_ishi"
+    elif message.text == "📰 Maqola":
+        work_type = "maqola"
+    else:
+        await message.answer("❌ Iltimos, tugmalardan birini tanlang.")
+        return
+    
+    await state.update_data(work_type=work_type)
+    await message.answer(
+        "✍️ Promokod so'zini kiriting:\n\n"
+        "Masalan: YANGI2025, CHEGIRMA50",
         reply_markup=get_cancel_button()
     )
-    await state.set_state(AdminStates.waiting_for_promocode_data)
+    await state.set_state(AdminStates.waiting_for_promo_code)
 
-@router.message(AdminStates.waiting_for_promocode_data)
-async def promocode_create_process(message: Message, state: FSMContext):
-    """Promokodni yaratish"""
+@router.message(AdminStates.waiting_for_promo_code)
+async def promocode_code(message: Message, state: FSMContext):
+    """Promokod so'zini qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_admin_menu())
+        return
+    
+    code = message.text.strip().upper()
+    
+    if len(code) < 3:
+        await message.answer("❌ Promokod kamida 3 ta belgidan iborat bo'lishi kerak.")
+        return
+    
+    await state.update_data(code=code)
+    await message.answer(
+        "💰 Necha foiz chegirma qilmoqchisiz?\n\n"
+        "1 dan 100 gacha raqam kiriting.\n\n"
+        "Masalan: 10, 20, 50",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(AdminStates.waiting_for_promo_discount)
+
+@router.message(AdminStates.waiting_for_promo_discount)
+async def promocode_discount(message: Message, state: FSMContext):
+    """Chegirma foizini qabul qilish"""
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=get_admin_menu())
         return
     
     try:
-        parts = message.text.split()
-        if len(parts) != 4:
-            await message.answer("❌ Noto'g'ri format. Iltimos, qaytadan urinib ko'ring.")
-            return
-        
-        code, work_type, discount, expiry = parts
-        discount = int(discount)
-        
-        if work_type not in ["kurs_ishi", "maqola"]:
-            await message.answer("❌ Turi faqat 'kurs_ishi' yoki 'maqola' bo'lishi mumkin.")
-            return
+        discount = int(message.text)
         
         if discount < 1 or discount > 100:
             await message.answer("❌ Chegirma 1 dan 100 gacha bo'lishi kerak.")
             return
         
-        datetime.strptime(expiry, "%Y-%m-%d")
-        
-        if db.add_promocode(code.upper(), work_type, discount, expiry):
-            await message.answer(
-                f"✅ Promokod yaratildi!\n\n"
-                f"🎁 Kod: {code.upper()}\n"
-                f"📝 Turi: {work_type}\n"
-                f"💰 Chegirma: {discount}%\n"
-                f"📅 Muddat: {expiry}",
-                reply_markup=get_admin_menu()
-            )
-        else:
-            await message.answer("❌ Bunday promokod allaqachon mavjud.", reply_markup=get_admin_menu())
+        await state.update_data(discount=discount)
+        await message.answer(
+            "⏱ Promokod foydalanish turini tanlang:",
+            reply_markup=get_promo_usage_type_buttons()
+        )
+        await state.set_state(AdminStates.waiting_for_promo_usage_type)
     
     except ValueError:
-        await message.answer("❌ Noto'g'ri format. Iltimos, qaytadan urinib ko'ring.")
+        await message.answer("❌ Iltimos, faqat raqam kiriting (1-100).")
+
+@router.message(AdminStates.waiting_for_promo_usage_type)
+async def promocode_usage_type(message: Message, state: FSMContext):
+    """Foydalanish turini qabul qilish va promokodni yaratish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_admin_menu())
+        return
+    
+    if message.text == "🔄 1 martalik (1 ta foydalanuvchi)":
+        usage_type = "one_time"
+        usage_desc = "1 martalik (faqat 1 ta foydalanuvchi)"
+    elif message.text == "👥 Har bir foydalanuvchi uchun 1 marta":
+        usage_type = "per_user"
+        usage_desc = "Har bir foydalanuvchi 1 marta"
+    elif message.text == "♾️ Cheksiz foydalanish":
+        usage_type = "unlimited"
+        usage_desc = "Cheksiz"
+    else:
+        await message.answer("❌ Iltimos, tugmalardan birini tanlang.")
+        return
+    
+    data = await state.get_data()
+    code = data['code']
+    work_type = data['work_type']
+    discount = data['discount']
+    
+    # Promokodni yaratish
+    if db.add_promocode(code, work_type, discount, None, usage_type):
+        work_type_name = "Kurs ishi" if work_type == "kurs_ishi" else "Maqola"
+        
+        await message.answer(
+            f"✅ Promokod muvaffaqiyatli yaratildi!\n\n"
+            f"🎟 Kod: {code}\n"
+            f"📝 Ish: {work_type_name}\n"
+            f"💰 Chegirma: {discount}%\n"
+            f"⏱ Foydalanish: {usage_desc}",
+            reply_markup=get_admin_menu()
+        )
+    else:
+        await message.answer(
+            "❌ Bunday promokod allaqachon mavjud.",
+            reply_markup=get_admin_menu()
+        )
     
     await state.clear()
 

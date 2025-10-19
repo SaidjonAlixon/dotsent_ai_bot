@@ -6,6 +6,21 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
+### Bosqichma-bosqich promokod yaratish tizimi ✅
+- Admin panel → "🎟 Promokod yaratish" tugmasini bosganda:
+  1. **Ish turi so'raladi**: "🧾 Kurs ishi" yoki "📰 Maqola" tugmalari
+  2. **Promokod so'zi kiritiladi**: Masalan: YANGI2025, CHEGIRMA50
+  3. **Chegirma foizi**: 1 dan 100 gacha raqam
+  4. **Foydalanish turi**:
+     - 🔄 1 martalik (faqat 1 ta foydalanuvchi)
+     - 👥 Har bir foydalanuvchi uchun 1 marta
+     - ♾️ Cheksiz foydalanish
+- Database yangilandi: `usage_type` va `used_by` ustunlari qo'shildi
+- Har bir bosqichda "❌ Bekor qilish" tugmasi mavjud
+- Yaratilgandan keyin batafsil ma'lumot ko'rsatiladi
+
+## O'zgarishlar (2025-10-19)
+
 ### 3. Asenkron (Parallel) ishlov berish tizimi ✅
 - Bot endi bir paytda bir nechta foydalanuvchiga xizmat ko'rsatadi
 - Har bir kurs ishi/maqola yaratish **background task** da ishlaydi
