@@ -951,6 +951,104 @@ async def convert_to_pdf_callback(callback: CallbackQuery):
             "\"Save As\" → \"PDF\" orqali PDF qiling."
         )
 
+@router.message(F.text == "📄 Word → PDF")
+async def word_to_pdf_handler(message: Message, state: FSMContext):
+    """Word faylni PDF ga o'tkazish"""
+    await message.answer(
+        "📄 <b>Word → PDF konvertatsiya</b>\n\n"
+        "📎 Iltimos, Word (.docx) faylni yuboring.\n\n"
+        "📝 <i>Fayl yuborilgandan so'ng avtomatik ravishda PDF formatga o'tkaziladi.</i>",
+        reply_markup=get_cancel_button(),
+        parse_mode="HTML"
+    )
+    await state.set_state(UserStates.waiting_for_word_file)
+
+@router.message(UserStates.waiting_for_word_file, F.document)
+async def process_word_file_for_pdf(message: Message, state: FSMContext, bot):
+    """Word faylni qabul qilib PDF qilish"""
+    try:
+        document = message.document
+        
+        # Fayl formatini tekshirish
+        if not document.file_name.endswith('.docx'):
+            await message.answer(
+                "❌ Iltimos, faqat Word (.docx) fayl yuboring.\n\n"
+                "📝 Eski Word formatini (.doc) qo'llab-quvvatlamaymiz.",
+                reply_markup=get_cancel_button()
+            )
+            return
+        
+        # Fayl hajmini tekshirish (max 20 MB)
+        if document.file_size > 20 * 1024 * 1024:
+            await message.answer(
+                "❌ Fayl juda katta!\n\n"
+                "📏 Maksimal hajm: 20 MB\n"
+                f"📦 Sizning fayl: {document.file_size / 1024 / 1024:.2f} MB",
+                reply_markup=get_cancel_button()
+            )
+            return
+        
+        await message.answer("⏳ PDF yaratilmoqda, iltimos kuting...")
+        
+        # Faylni yuklab olish
+        os.makedirs('generated_files', exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        docx_filename = f"word_to_pdf_{message.from_user.id}_{timestamp}.docx"
+        docx_path = os.path.join('generated_files', docx_filename)
+        
+        await bot.download(document, destination=docx_path)
+        
+        # PDF ga o'tkazish
+        pdf_path = docx_path.replace('.docx', '.pdf')
+        
+        import subprocess
+        result = subprocess.run(
+            ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', 'generated_files', docx_path],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        if result.returncode != 0 or not os.path.exists(pdf_path):
+            raise Exception(f"PDF konvertatsiya xatolik: {result.stderr}")
+        
+        # PDF faylni yuborish
+        pdf_file = FSInputFile(pdf_path)
+        await message.answer_document(
+            document=pdf_file,
+            caption="✅ <b>PDF tayyor!</b>\n\n"
+                    f"📄 Fayl nomi: {document.file_name.replace('.docx', '.pdf')}\n"
+                    f"📦 Hajm: {os.path.getsize(pdf_path) / 1024:.2f} KB",
+            parse_mode="HTML",
+            reply_markup=get_main_menu()
+        )
+        
+        await state.clear()
+        
+        # Fayllarni o'chirish
+        try:
+            os.remove(docx_path)
+            os.remove(pdf_path)
+            logger.info(f"Word va PDF fayllar o'chirildi: {docx_path}, {pdf_path}")
+        except Exception as e:
+            logger.error(f"Fayllarni o'chirishda xatolik: {e}")
+        
+    except subprocess.TimeoutExpired:
+        await message.answer(
+            "❌ PDF yaratish juda uzoq davom etdi.\n\n"
+            "Iltimos, kichikroq fayl yuboring yoki keyinroq qayta urinib ko'ring.",
+            reply_markup=get_main_menu()
+        )
+        await state.clear()
+    except Exception as e:
+        logger.error(f"Word to PDF xatolik: {e}")
+        await message.answer(
+            "❌ PDF yaratishda xatolik yuz berdi.\n\n"
+            "Iltimos, faylni tekshiring va qayta urinib ko'ring.",
+            reply_markup=get_main_menu()
+        )
+        await state.clear()
+
 @router.message(F.text == "❓ Yordam")
 async def help_handler(message: Message):
     """Yordam"""
@@ -962,6 +1060,7 @@ async def help_handler(message: Message):
 🔹 **Pul ishlash** - Referal havolangizni ulashing
 🔹 **Profil** - Shaxsiy ma'lumotlaringiz
 🔹 **Promokodlarim** - Chegirmalardan foydalaning
+🔹 **Word → PDF** - Word faylni PDF qiling (bepul)
 
 💬 Savollaringiz bo'lsa, qo'llab-quvvatlash guruhiga qo'shiling:"""
     
