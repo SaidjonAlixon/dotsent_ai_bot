@@ -92,10 +92,12 @@ def create_word_document(sections, user_data, file_path):
         
         elif section_type in ['chapter1', 'chapter2', 'chapter3']:
             title = section_data.get('title', 'BOB')
-            p = doc.add_paragraph(title)
+            # Bob sarlavhasini katta harflar bilan yozish
+            p = doc.add_paragraph(title.upper())
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.runs[0].font.bold = True
             p.runs[0].font.size = Pt(14)
+            p.runs[0].font.name = 'Times New Roman'
             
             doc.add_paragraph()
             

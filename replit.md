@@ -58,6 +58,7 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 - **Narx**: ~$5 per kurs ishi (GPT-4o da $16.50 edi - 3x arzon!)
 - Har bir bo'lim uchun batafsil prompt va uzunlik validatsiyasi mavjud
 - System prompt: "JUDA BATAFSIL, UZUN va chuqur akademik matn yaratish"
+- **Bob sarlavhalari**: KATTA HARFLAR bilan, markazda, qalin (bold)
 
 ### 3. Professional DOCX formatlash (O'zbekiston standartlari)
 - **1. Titul varaq** (O'quv yurti, talaba ma'lumotlari, fan, mavzu, kurs)
