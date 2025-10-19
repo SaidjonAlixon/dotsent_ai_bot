@@ -28,6 +28,7 @@ The bot is built with `Aiogram 3.x` for Telegram Bot API interaction and `OpenAI
     - Includes dynamic title pages, table of contents, and structured sections in DOCX format.
 - **Admin Panel:** Features include mass messaging, user balance management, statistics, system settings (prices, referral bonuses), payment confirmation, and user ban/unban functionality.
 - **User Management:** Balance system, referral program, and promotional code application.
+- **Word to PDF Converter:** Standalone feature allowing users to convert any Word (.docx) file to PDF format for free. Supports files up to 20 MB with automatic cleanup after conversion.
 - **File Handling:** Automated DOCX and PDF file generation and subsequent deletion to conserve server space.
 - **Error Handling:** Graceful error messages and retry mechanisms for content generation.
 

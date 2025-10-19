@@ -11,7 +11,7 @@ import os
 from database import Database
 from keyboards import (get_main_menu, get_cancel_button, get_balance_buttons, 
                         get_service_info_buttons, get_payment_amount_buttons, get_support_buttons,
-                        get_pdf_convert_button, get_subscription_keyboard)
+                        get_subscription_keyboard)
 from utils.course_writer import generate_course_work
 from utils.document_generator import create_word_document
 from utils.article_writer import generate_article
@@ -78,7 +78,7 @@ async def process_course_work_background(bot, telegram_id, user_data_for_ai, pri
             f"📝 **Fayl haqida:**\n"
             f"• Fayl Word (DOCX) formatda\n"
             f"• Kompyuterda Word orqali ochib o'zgartirish kiritishingiz mumkin\n"
-            f"• Agar telefoningizda ochilmasa yoki xato ko'rsatsa, pastdagi tugma orqali PDF qiling va ko'ring"
+            f"• PDF kerak bo'lsa, asosiy menyudagi '📄 Word → PDF' tugmasini ishlating"
         )
         
         await bot.send_document(
@@ -86,7 +86,7 @@ async def process_course_work_background(bot, telegram_id, user_data_for_ai, pri
             document=document_file_user,
             caption=info_text,
             parse_mode="Markdown",
-            reply_markup=get_pdf_convert_button(docx_path)
+            reply_markup=get_main_menu()
         )
         
         db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
@@ -152,7 +152,7 @@ async def process_article_background(bot, telegram_id, user_data_for_ai, price, 
             f"📝 **Fayl haqida:**\n"
             f"• Fayl Word (DOCX) formatda\n"
             f"• Kompyuterda Word orqali ochib o'zgartirish kiritishingiz mumkin\n"
-            f"• Agar telefoningizda ochilmasa yoki xato ko'rsatsa, pastdagi tugma orqali PDF qiling va ko'ring"
+            f"• PDF kerak bo'lsa, asosiy menyudagi '📄 Word → PDF' tugmasini ishlating"
         )
         
         await bot.send_document(
@@ -160,7 +160,7 @@ async def process_article_background(bot, telegram_id, user_data_for_ai, price, 
             document=document_file_user,
             caption=info_text,
             parse_mode="Markdown",
-            reply_markup=get_pdf_convert_button(filepath)
+            reply_markup=get_main_menu()
         )
         
         db.add_order(telegram_id, "maqola", topic, price, file_link)
