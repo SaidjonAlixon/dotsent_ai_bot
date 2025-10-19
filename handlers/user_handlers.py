@@ -593,9 +593,22 @@ async def process_payment_amount(message: Message, state: FSMContext):
         
         await state.update_data(payment_amount=amount)
         await message.answer(
-            f"💳 To'lov summasi: {amount:,} so'm\n\n"
-            f"Iltimos, to'lov chekini (screenshot) yuboring:",
-            reply_markup=get_cancel_button()
+            f"💰 <b>To'lov summasi: {amount:,} so'm</b>\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📱 <b>Quyidagi kartalardan biriga to'lov qiling:</b>\n\n"
+            f"🔹 <code>5614 6821 2364 5204</code>\n"
+            f"   💳 Uzcard\n\n"
+            f"🔹 <code>9860 2301 0130 5897</code>\n"
+            f"   💳 Humo\n\n"
+            f"🔹 <code>4067 0700 0846 9202</code>\n"
+            f"   💳 VISA\n\n"
+            f"👤 <i>Ataullayev Saidmuhammadalixon</i>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📸 <b>To'lov chekini (screenshot) yuboring</b>\n\n"
+            f"⚠️ <i>Chek haqiqiy bo'lishi kerak!\n"
+            f"Admin tekshirib, hisobingizni to'ldiradi.</i>",
+            reply_markup=get_cancel_button(),
+            parse_mode="HTML"
         )
         await state.set_state(UserStates.waiting_for_payment_check)
     
