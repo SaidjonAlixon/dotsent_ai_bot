@@ -23,6 +23,17 @@ logger = logging.getLogger(__name__)
 router = Router()
 db = Database()
 
+# Majburiy obuna tekshirish funksiyasi
+async def check_subscription(bot, user_id: int, channel_id: str) -> bool:
+    """Foydalanuvchi kanalga obuna bo'lganligini tekshirish"""
+    try:
+        member = await bot.get_chat_member(chat_id=channel_id, user_id=user_id)
+        # Obuna holatlari: creator, administrator, member
+        return member.status in ['creator', 'administrator', 'member']
+    except Exception as e:
+        logger.error(f"Obuna tekshirishda xatolik: {e}")
+        return False
+
 # Background task yaratish uchun
 async def process_course_work_background(bot, telegram_id, user_data_for_ai, price, data):
     """Background da kurs ishini yaratish"""
