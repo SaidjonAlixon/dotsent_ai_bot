@@ -196,6 +196,7 @@ class UserStates(StatesGroup):
     waiting_for_payment_amount = State()
     waiting_for_payment_check = State()
     waiting_for_promocode = State()
+    waiting_for_word_file = State()
 
 @router.message(Command("start"))
 async def cmd_start(message: Message, bot):
