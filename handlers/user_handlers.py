@@ -137,7 +137,9 @@ class UserStates(StatesGroup):
     waiting_for_kurs_subject = State()
     waiting_for_kurs_course_number = State()
     waiting_for_maqola_topic = State()
-    waiting_for_maqola_authors = State()
+    waiting_for_maqola_author_name = State()
+    waiting_for_maqola_field_position = State()
+    waiting_for_maqola_supervisor = State()
     waiting_for_payment_amount = State()
     waiting_for_payment_check = State()
     waiting_for_promocode = State()
@@ -330,7 +332,8 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
 async def maqola_handler(message: Message, state: FSMContext):
     """Maqola yozish"""
     await message.answer(
-        "📝 Maqola mavzusini kiriting:\n\nMasalan: Raqamli iqtisodiyotda blockchain texnologiyasining o'rni",
+        "📝 Maqola mavzusini kiriting:\n\n"
+        "Masalan: Raqamli iqtisodiyotda blockchain texnologiyasining o'rni",
         reply_markup=get_cancel_button()
     )
     await state.set_state(UserStates.waiting_for_maqola_topic)
@@ -345,19 +348,50 @@ async def process_maqola_topic(message: Message, state: FSMContext):
     
     await state.update_data(topic=message.text)
     await message.answer(
-        "👤 Mualliflar ma'lumotini kiriting:\n\n"
-        "Format: Ism Familiya, Lavozimi, Tashkilot\n\n"
-        "Masalan:\n"
-        "Akmal Abdullayev, Katta o'qituvchi, Toshkent Davlat Texnika Universiteti\n\n"
-        "Bir nechta muallif bo'lsa, har birini yangi qatordan kiriting.\n"
-        "Faqat o'zingiz bo'lsangiz, faqat o'z ma'lumotingizni kiriting:",
+        "👤 Ism va familiyangizni kiriting:\n\n"
+        "Masalan: Akmal Abdullayev",
         reply_markup=get_cancel_button()
     )
-    await state.set_state(UserStates.waiting_for_maqola_authors)
+    await state.set_state(UserStates.waiting_for_maqola_author_name)
 
-@router.message(UserStates.waiting_for_maqola_authors)
-async def process_maqola_authors(message: Message, state: FSMContext, bot):
-    """Mualliflar ma'lumotini qabul qilish va maqolani yaratish"""
+@router.message(UserStates.waiting_for_maqola_author_name)
+async def process_maqola_author_name(message: Message, state: FSMContext):
+    """Muallif ismini qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    await state.update_data(author_name=message.text)
+    await message.answer(
+        "📚 Sohangiz va lavozimingizni kiriting:\n\n"
+        "Masalan: Matematika, Katta o'qituvchi",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(UserStates.waiting_for_maqola_field_position)
+
+@router.message(UserStates.waiting_for_maqola_field_position)
+async def process_maqola_field_position(message: Message, state: FSMContext):
+    """Soha va lavozimni qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    await state.update_data(field_position=message.text)
+    
+    from keyboards import get_skip_button
+    await message.answer(
+        "👨‍🏫 Siz bilan ishlaydigan ustoz ism va familiyasini kiriting:\n\n"
+        "Masalan: Rustam Karimov\n\n"
+        "Agar ustozingiz bo'lmasa, 'O'tkazib yuborish' tugmasini bosing.",
+        reply_markup=get_skip_button()
+    )
+    await state.set_state(UserStates.waiting_for_maqola_supervisor)
+
+@router.message(UserStates.waiting_for_maqola_supervisor)
+async def process_maqola_supervisor(message: Message, state: FSMContext, bot):
+    """Ustoz ma'lumotini qabul qilish va maqolani yaratish"""
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
@@ -385,38 +419,45 @@ async def process_maqola_authors(message: Message, state: FSMContext, bot):
         return
     
     data = await state.get_data()
+    
+    # Ustozni saqlash (yoki bo'sh qoldirish)
+    supervisor = None if message.text == "⏭ O'tkazib yuborish" else message.text
+    await state.update_data(supervisor=supervisor)
+    
+    data = await state.get_data()
     topic = data['topic']
-    authors_text = message.text
+    author_name = data['author_name']
+    field_position = data['field_position']
     
-    # Mualliflarni parse qilish
-    authors = []
-    for line in authors_text.split('\n'):
-        if line.strip():
-            parts = [p.strip() for p in line.split(',')]
-            if len(parts) >= 2:
-                authors.append({
-                    'name': parts[0],
-                    'affiliation': ', '.join(parts[1:])
-                })
-            else:
-                authors.append({
-                    'name': line.strip(),
-                    'affiliation': ''
-                })
+    # Ma'lumotlarni ko'rsatish
+    confirmation_text = f"✅ Ma'lumotlar qabul qilindi!\n\n"
+    confirmation_text += f"📝 Mavzu: {topic}\n"
+    confirmation_text += f"👤 Muallif: {author_name}\n"
+    confirmation_text += f"📚 Soha va lavozim: {field_position}\n"
+    if supervisor:
+        confirmation_text += f"👨‍🏫 Ustoz: {supervisor}\n"
+    confirmation_text += f"\n⏳ Maqolangiz tayyorlanmoqda...\n"
+    confirmation_text += f"📲 Tayyor bo'lgach sizga yuboriladi (2-3 daqiqa)\n\n"
+    confirmation_text += f"Shu vaqt ichida botning boshqa funksiyalaridan foydalanishingiz mumkin!"
     
-    await message.answer(
-        f"✅ Ma'lumotlar qabul qilindi!\n\n"
-        f"📝 Mavzu: {topic}\n"
-        f"👥 Mualliflar: {len(authors)} ta\n\n"
-        f"⏳ Maqolangiz tayyorlanmoqda...\n"
-        f"📲 Tayyor bo'lgach sizga yuboriladi (2-3 daqiqa)\n\n"
-        f"Shu vaqt ichida botning boshqa funksiyalaridan foydalanishingiz mumkin!",
-        reply_markup=get_main_menu()
-    )
+    await message.answer(confirmation_text, reply_markup=get_main_menu())
+    
+    # Mualliflar ro'yxatini yaratish
+    authors = [{
+        'name': author_name,
+        'affiliation': field_position
+    }]
+    
+    # Agar ustoz bo'lsa, qo'shish
+    if supervisor:
+        authors.append({
+            'name': supervisor,
+            'affiliation': 'Ilmiy rahbar'
+        })
     
     user_data_for_ai = {
         'topic': topic,
-        'subject': 'Ilmiy tadqiqot',
+        'subject': field_position.split(',')[0] if ',' in field_position else field_position,
         'authors': authors
     }
     

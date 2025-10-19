@@ -155,6 +155,12 @@ TOLOV_TASDIQLASH_CHANNEL_ID - To'lov tasdiqlash kanali ID si
 
 Bot endi professional ilmiy maqola ham yarata oladi!
 
+**FSM (Ketma-ket so'rovlar):**
+1. 📝 Maqola mavzusi
+2. 👤 Muallif ism va familiyasi
+3. 📚 Soha va lavozim (masalan: Matematika, Katta o'qituvchi)
+4. 👨‍🏫 Ustoz ism va familiyasi (⏭ O'tkazib yuborish tugmasi bilan)
+
 **Format:**
 - A4 sahifa, 20mm margin (barcha tomondan)
 - Times New Roman 14pt
@@ -163,7 +169,10 @@ Bot endi professional ilmiy maqola ham yarata oladi!
 - 7-10 sahifa
 
 **Tarkib:**
-1. **1-sahifa**: Sarlavha (qalin, markazda) va mualliflar ma'lumoti (ismi, lavozimi, tashkiloti)
+1. **1-sahifa**: Sarlavha (qalin, markazda) va mualliflar ma'lumoti:
+   - Muallif ism familiyasi
+   - Soha va lavozim
+   - Ustoz ism familiyasi (agar kiritilgan bo'lsa, "Ilmiy rahbar" deb)
 2. **Annotatsiya** (3 tilda: O'zbek, Ingliz, Rus) - har biri 40-50 so'z
 3. **Kalit so'zlar** (5-8 ta, har bir tilda, qalin)
 4. **KIRISH** (qalin sarlavha, uzluksiz matn)

@@ -34,6 +34,17 @@ def get_cancel_button():
     )
     return keyboard
 
+def get_skip_button():
+    """O'tkazib yuborish tugmasi"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⏭ O'tkazib yuborish")],
+            [KeyboardButton(text="❌ Bekor qilish")]
+        ],
+        resize_keyboard=True
+    )
+    return keyboard
+
 def get_payment_confirmation(payment_id: int):
     """To'lovni tasdiqlash tugmalari"""
     keyboard = InlineKeyboardMarkup(
