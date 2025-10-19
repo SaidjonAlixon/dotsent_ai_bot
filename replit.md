@@ -139,6 +139,40 @@ MAQOLALAR_CHANNEL_ID - Maqolalar kanali ID si
 TOLOV_TASDIQLASH_CHANNEL_ID - To'lov tasdiqlash kanali ID si
 ```
 
+## Maqola yaratish funksiyasi (2025-10-19)
+
+### Yangi xususiyat: Ilmiy maqola yaratish
+
+Bot endi professional ilmiy maqola ham yarata oladi!
+
+**Format:**
+- A4 sahifa, 20mm margin (barcha tomondan)
+- Times New Roman 14pt
+- 1.5 qator oralig'i
+- 1.25 sm xat boshi
+- 7-10 sahifa
+
+**Tarkib:**
+1. Sarlavha va mualliflar ma'lumoti
+2. Annotatsiya (3 tilda: O'zbek, Ingliz, Rus)
+3. Kalit so'zlar (5-8 ta, har bir tilda)
+4. Kirish (dolzarbligi)
+5. Tadqiqot uslublari
+6. Natijalar va muhokama
+7. Xulosa
+8. Foydalanilgan adabiyotlar (APA format)
+
+**AI generation:**
+- Har bir bo'lim alohida GPT-4o Mini orqali yaratiladi
+- Professional ilmiy uslub
+- Mavzuga mos annotatsiyalar (3 tilda)
+- APA formatda adabiyotlar (15-20 ta manba)
+
+**Fayllar:**
+- `utils/article_writer.py` - Maqola kontenti yaratish
+- `utils/article_document_generator.py` - DOCX formatlash
+- Har bir bo'lim yangi sahifadan boshlanadi
+
 ## Keyingi qadamlar
 
 - [x] FSM orqali to'liq ma'lumot yig'ish (F.I.Sh, O'quv yurti, Fan, Kurs)
@@ -146,6 +180,7 @@ TOLOV_TASDIQLASH_CHANNEL_ID - To'lov tasdiqlash kanali ID si
 - [x] Token optimizatsiyasi (26,000 tokens - quota xatoligini bartaraf qilish)
 - [x] Professional DOCX formatlash (titul, reja, mundarija, ilovalar)
 - [x] O'zbekiston standartlariga moslashtirilgan format
+- [x] Ilmiy maqola yaratish (3 tilda annotatsiya, APA format)
 - [ ] "Yana yozish" va "Asosiy menyu" tugmalari
 - [ ] "Namuna ishni ko'rish" funksiyasi
 - [ ] PDF export funksiyasi (docx2pdf)

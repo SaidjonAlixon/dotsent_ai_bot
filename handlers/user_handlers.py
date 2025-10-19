@@ -10,6 +10,8 @@ from database import Database
 from keyboards import get_main_menu, get_cancel_button, get_balance_buttons
 from utils.course_writer import generate_course_work
 from utils.document_generator import create_word_document
+from utils.article_writer import generate_article
+from utils.article_document_generator import create_article_document
 import config
 import os
 
@@ -25,6 +27,7 @@ class UserStates(StatesGroup):
     waiting_for_kurs_subject = State()
     waiting_for_kurs_course_number = State()
     waiting_for_maqola_topic = State()
+    waiting_for_maqola_authors = State()
     waiting_for_payment_amount = State()
     waiting_for_payment_check = State()
     waiting_for_promocode = State()
@@ -265,14 +268,33 @@ async def maqola_handler(message: Message, state: FSMContext):
     await state.set_state(UserStates.waiting_for_maqola_topic)
 
 @router.message(UserStates.waiting_for_maqola_topic)
-async def process_maqola_topic(message: Message, state: FSMContext, bot):
+async def process_maqola_topic(message: Message, state: FSMContext):
     """Maqola mavzusini qabul qilish"""
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
         return
     
-    topic = message.text
+    await state.update_data(topic=message.text)
+    await message.answer(
+        "👤 Mualliflar ma'lumotini kiriting:\n\n"
+        "Format: Ism Familiya, Lavozimi, Tashkilot\n\n"
+        "Masalan:\n"
+        "Akmal Abdullayev, Katta o'qituvchi, Toshkent Davlat Texnika Universiteti\n\n"
+        "Bir nechta muallif bo'lsa, har birini yangi qatordan kiriting.\n"
+        "Faqat o'zingiz bo'lsangiz, faqat o'z ma'lumotingizni kiriting:",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(UserStates.waiting_for_maqola_authors)
+
+@router.message(UserStates.waiting_for_maqola_authors)
+async def process_maqola_authors(message: Message, state: FSMContext, bot):
+    """Mualliflar ma'lumotini qabul qilish va maqolani yaratish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
     
@@ -294,44 +316,49 @@ async def process_maqola_topic(message: Message, state: FSMContext, bot):
         await state.clear()
         return
     
+    data = await state.get_data()
+    topic = data['topic']
+    authors_text = message.text
+    
+    # Mualliflarni parse qilish
+    authors = []
+    for line in authors_text.split('\n'):
+        if line.strip():
+            parts = [p.strip() for p in line.split(',')]
+            if len(parts) >= 2:
+                authors.append({
+                    'name': parts[0],
+                    'affiliation': ', '.join(parts[1:])
+                })
+            else:
+                authors.append({
+                    'name': line.strip(),
+                    'affiliation': ''
+                })
+    
     await message.answer(
-        "⏳ Sizning maqolangiz tayyorlanmoqda...\n\n"
-        "Bu biroz vaqt olishi mumkin. Iltimos, kuting.",
+        f"✅ Ma'lumotlar qabul qilindi!\n\n"
+        f"📝 Mavzu: {topic}\n"
+        f"👥 Mualliflar: {len(authors)} ta\n\n"
+        f"⏳ Maqolangiz tayyorlanmoqda...\n"
+        f"Bu 2-3 daqiqa vaqt olishi mumkin. Iltimos, kuting.",
         reply_markup=get_main_menu()
     )
     
     try:
-        from utils.course_writer import generate_section_with_ai
-        
-        content = await generate_section_with_ai(
-            f"Quyidagi mavzuda ilmiy maqola yozing: {topic}\n\n"
-            f"Maqola quyidagi qismlardan iborat bo'lishi kerak:\n"
-            f"1. Annotatsiya (o'zbek va ingliz tillarida)\n"
-            f"2. Kirish\n"
-            f"3. Asosiy qism (2-3 bo'lim)\n"
-            f"4. Xulosa\n"
-            f"5. Foydalanilgan adabiyotlar\n\n"
-            f"Matn ilmiy uslubda, batafsil va professional bo'lishi kerak.",
-            max_words=3000
-        )
-        
-        sections = [
-            {'type': 'intro', 'content': content}
-        ]
-        
-        user_data_maqola = {
-            'name': user['full_name'],
-            'university': '',
-            'subject': '',
+        user_data_for_ai = {
             'topic': topic,
-            'course': ''
+            'subject': 'Ilmiy tadqiqot',
+            'authors': authors
         }
+        
+        sections = await generate_article(user_data_for_ai)
         
         filename = f"maqola_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
         os.makedirs('generated_files', exist_ok=True)
         filepath = os.path.join('generated_files', filename)
         
-        create_word_document(sections, user_data_maqola, filepath)
+        create_article_document(sections, user_data_for_ai, filepath)
         
         db.update_balance(telegram_id, -price)
         
