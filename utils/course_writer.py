@@ -138,7 +138,7 @@ async def generate_course_work(user_data):
     
     return sections
 
-async def generate_section_with_ai(prompt, max_words=2000):
+async def generate_section_with_ai(prompt, max_words=2500):
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
