@@ -20,3 +20,7 @@ MAQOLA_SAMPLE_URL = os.getenv("MAQOLA_SAMPLE_URL", "https://t.me/example")
 
 # Qo'llab-quvvatlash guruhi
 SUPPORT_GROUP_URL = os.getenv("SUPPORT_GROUP_URL", "https://t.me/example")
+
+# Majburiy obuna kanallari
+REQUIRED_CHANNEL_1 = os.getenv("REQUIRED_CHANNEL_1", "")  # Kanal 1 ID (masalan: @channel1 yoki -1001234567890)
+REQUIRED_CHANNEL_2 = os.getenv("REQUIRED_CHANNEL_2", "")  # Kanal 2 ID (masalan: @channel2 yoki -1009876543210)
