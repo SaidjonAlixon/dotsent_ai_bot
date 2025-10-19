@@ -35,6 +35,7 @@ The bot is built with `Aiogram 3.x` for Telegram Bot API interaction and `OpenAI
 - **Modular Structure:** Code is organized into `handlers`, `utils`, `keyboards`, etc., for maintainability.
 - **Database Schema:** `SQLite` with tables for `users`, `orders`, `payments`, `promocodes`, and `settings`. Includes fields like `is_blocked` for user banning.
 - **Middleware:** `BanCheckMiddleware` to block banned users from bot interaction.
+- **Forced Subscription:** Optional forced subscription system requiring users to join 2 channels before accessing the bot. Automatically checks subscription status and provides clear feedback.
 - **Deployment:** Configured for Railway.app with `Procfile`, `requirements.txt`, and automated file cleanup.
 
 ## External Dependencies

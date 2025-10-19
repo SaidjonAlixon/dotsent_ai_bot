@@ -43,12 +43,21 @@ Railway dashboard → **Variables** → **+ New Variable**
 Quyidagi barcha secret'larni qo'shing:
 
 ```bash
+# Asosiy sozlamalar
 BOT_TOKEN=your_bot_token_here
 OPENAI_API_KEY=your_openai_key_here
 ADMIN_ID=your_telegram_id
+
+# Kanallar
 KURS_ISHLARI_CHANNEL_ID=your_channel_id
 MAQOLALAR_CHANNEL_ID=your_channel_id
 TOLOV_TASDIQLASH_CHANNEL_ID=your_channel_id
+
+# Majburiy obuna kanallari (Ixtiyoriy - agar botdan foydalanish uchun kanalga obuna talab qilmoqchi bo'lsangiz)
+REQUIRED_CHANNEL_1=@your_channel_1 yoki -100xxxxxxxxx
+REQUIRED_CHANNEL_2=@your_channel_2 yoki -100xxxxxxxxx
+
+# Namuna fayllar va qo'llab-quvvatlash
 KURS_ISHI_SAMPLE_URL=https://t.me/your_channel/123
 MAQOLA_SAMPLE_URL=https://t.me/your_channel/456
 SUPPORT_GROUP_URL=https://t.me/your_support_group
