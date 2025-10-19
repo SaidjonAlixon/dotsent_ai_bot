@@ -27,9 +27,17 @@ class Database:
             balance INTEGER DEFAULT 0,
             referal_code TEXT UNIQUE,
             invited_by INTEGER,
-            register_date TEXT NOT NULL
+            register_date TEXT NOT NULL,
+            is_blocked INTEGER DEFAULT 0
         )
         """)
+        
+        # Eski foydalanuvchilar uchun is_blocked ustunini qo'shish (agar mavjud bo'lmasa)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
         
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -297,6 +305,36 @@ class Database:
         
         return users
     
+    def mark_user_as_blocked(self, telegram_id: int) -> bool:
+        """Foydalanuvchini blok deb belgilash"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("UPDATE users SET is_blocked = 1 WHERE telegram_id = ?", (telegram_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Foydalanuvchini blok deb belgilashda xatolik: {e}")
+            return False
+    
+    def unmark_user_as_blocked(self, telegram_id: int) -> bool:
+        """Foydalanuvchini faol deb belgilash (unblock)"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("UPDATE users SET is_blocked = 0 WHERE telegram_id = ?", (telegram_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Foydalanuvchini faol deb belgilashda xatolik: {e}")
+            return False
+    
     def get_statistics(self) -> Dict[str, int]:
         """Statistika olish"""
         conn = self.get_connection()
@@ -304,6 +342,9 @@ class Database:
         
         cursor.execute("SELECT COUNT(*) FROM users")
         total_users = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users WHERE is_blocked = 1")
+        blocked_users = cursor.fetchone()[0]
         
         cursor.execute("SELECT COUNT(*) FROM orders WHERE type = 'kurs_ishi'")
         kurs_ishlari = cursor.fetchone()[0]
@@ -318,6 +359,7 @@ class Database:
         
         return {
             "total_users": total_users,
+            "blocked_users": blocked_users,
             "kurs_ishlari": kurs_ishlari,
             "maqolalar": maqolalar,
             "total_orders": total_orders

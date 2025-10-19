@@ -66,6 +66,7 @@ async def broadcast_send(message: Message, state: FSMContext, bot):
     users = db.get_all_users()
     success = 0
     failed = 0
+    blocked = 0
     
     await message.answer(f"📤 Xabar yuborilmoqda... Jami: {len(users)} foydalanuvchi")
     
@@ -78,14 +79,24 @@ async def broadcast_send(message: Message, state: FSMContext, bot):
             elif message.document:
                 await bot.send_document(user_id, message.document.file_id, caption=message.caption)
             success += 1
+            # Agar muvaffaqiyatli yuborilsa, foydalanuvchini faol deb belgilash
+            db.unmark_user_as_blocked(user_id)
         except Exception as e:
+            error_msg = str(e)
             logger.error(f"Xabar yuborishda xatolik (user {user_id}): {e}")
-            failed += 1
+            
+            # Agar bot blocked bo'lsa, belgilash
+            if "bot was blocked" in error_msg.lower() or "forbidden" in error_msg.lower():
+                db.mark_user_as_blocked(user_id)
+                blocked += 1
+            else:
+                failed += 1
     
     await message.answer(
         f"✅ Xabar yuborildi!\n\n"
         f"✅ Muvaffaqiyatli: {success}\n"
-        f"❌ Xatolik: {failed}",
+        f"🚫 Botni blok qilganlar: {blocked}\n"
+        f"❌ Boshqa xatoliklar: {failed}",
         reply_markup=get_admin_menu()
     )
     await state.clear()
@@ -232,6 +243,8 @@ async def statistics(message: Message):
     await message.answer(
         f"📊 Statistika\n\n"
         f"👥 Jami foydalanuvchilar: {stats['total_users']}\n"
+        f"🚫 Botni blok qilganlar: {stats['blocked_users']}\n"
+        f"✅ Faol foydalanuvchilar: {stats['total_users'] - stats['blocked_users']}\n\n"
         f"🧾 Kurs ishlari: {stats['kurs_ishlari']}\n"
         f"📰 Maqolalar: {stats['maqolalar']}\n"
         f"📝 Jami buyurtmalar: {stats['total_orders']}\n\n"

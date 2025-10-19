@@ -207,6 +207,9 @@ Bot endi professional ilmiy maqola ham yarata oladi!
 - [x] Ilmiy maqola yaratish (3 tilda annotatsiya, APA format)
 - [x] Asenkron (parallel) ishlov berish - bir paytda ko'p foydalanuvchi
 - [x] Non-blocking OpenAI API chaqiruvlari (run_in_executor)
+- [x] Xat boshi (1.25 sm) - O'zbekiston standartlari
+- [x] Statistikada blok qilgan foydalanuvchilar soni
+- [x] Ommaviy xabar yuborishda blok qilganlar hisobi
 - [ ] "Yana yozish" va "Asosiy menyu" tugmalari
 - [ ] "Namuna ishni ko'rish" funksiyasi
 - [ ] PDF export funksiyasi (docx2pdf)
