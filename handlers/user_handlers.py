@@ -11,7 +11,7 @@ import os
 from database import Database
 from keyboards import (get_main_menu, get_cancel_button, get_balance_buttons, 
                         get_service_info_buttons, get_payment_amount_buttons, get_support_buttons,
-                        get_pdf_convert_button)
+                        get_pdf_convert_button, get_subscription_keyboard)
 from utils.course_writer import generate_course_work
 from utils.document_generator import create_word_document
 from utils.article_writer import generate_article
@@ -198,7 +198,7 @@ class UserStates(StatesGroup):
     waiting_for_promocode = State()
 
 @router.message(Command("start"))
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, bot):
     """Start buyrug'i"""
     telegram_id = message.from_user.id
     username = message.from_user.username or ""
@@ -214,6 +214,21 @@ async def cmd_start(message: Message):
             parse_mode="Markdown"
         )
         return
+    
+    # Majburiy obuna tekshirish (admin uchun emas)
+    if telegram_id != config.ADMIN_ID and config.REQUIRED_CHANNEL_1 and config.REQUIRED_CHANNEL_2:
+        # Ikkala kanalga ham obuna bo'lganligini tekshirish
+        is_subscribed_1 = await check_subscription(bot, telegram_id, config.REQUIRED_CHANNEL_1)
+        is_subscribed_2 = await check_subscription(bot, telegram_id, config.REQUIRED_CHANNEL_2)
+        
+        if not is_subscribed_1 or not is_subscribed_2:
+            await message.answer(
+                "🔔 <b>Botdan foydalanish uchun quyidagi kanallarga obuna bo'ling:</b>\n\n"
+                "Obuna bo'lgandan keyin <b>'✅ Obuna bo'ldim'</b> tugmasini bosing.",
+                reply_markup=get_subscription_keyboard(config.REQUIRED_CHANNEL_1, config.REQUIRED_CHANNEL_2),
+                parse_mode="HTML"
+            )
+            return
     
     args = message.text.split()
     invited_by = None
