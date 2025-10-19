@@ -80,7 +80,7 @@ async def generate_section(section_prompt: str, section_name: str, min_words: in
     """Bir bo'limni yaratish"""
     try:
         response = openai.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Siz professional akademik yozuvchi siz. Batafsil, ilmiy va yuqori sifatli matn yarating."},
                 {"role": "user", "content": section_prompt}
@@ -257,7 +257,7 @@ async def generate_maqola(topic: str) -> str:
         prompt = MAQOLA_PROMPT.format(topic=topic)
         
         response = openai.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "Siz professional maqola muallifi siz."},
                 {"role": "user", "content": prompt}

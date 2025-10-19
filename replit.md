@@ -6,6 +6,13 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
+### 0. GPT-4o modeliga o'tish
+- `gpt-4` dan `gpt-4o` modeliga o'tildi (eng yangi va kuchli model)
+- Tezroq, arzonroq va aqlliroq
+- Katta context window (128K tokens)
+- Multimodal imkoniyatlari (matn, rasm, audio)
+- Yangi OpenAI API kalit qo'shildi
+
 ### 1. FSM (Finite State Machine) orqali to'liq ma'lumot yig'ish
 - Kurs ishi yaratishdan oldin quyidagi ma'lumotlar so'raladi:
   - F.I.Sh (to'liq ism)
