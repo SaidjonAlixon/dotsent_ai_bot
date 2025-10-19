@@ -19,6 +19,16 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 - Har bir bosqichda "❌ Bekor qilish" tugmasi mavjud
 - Yaratilgandan keyin batafsil ma'lumot ko'rsatiladi
 
+### Promokodlar ro'yxati va boshqarish tizimi ✅
+- Admin panel → "📋 Promokodlar ro'yxati" tugmasi
+- Barcha yaratilgan promokodlar ro'yxati:
+  - Kod nomi, ish turi, chegirma foizi
+  - Foydalanish turi va status (Faol/O'chirilgan)
+- Har bir promokod uchun "🗑 O'chirish" tugmasi
+- O'chirilgan promokod **darhol amal qilmaydi**
+- O'chirishdan keyin ro'yxat avtomatik yangilanadi
+- Database: `delete_promocode()` funksiyasi qo'shildi
+
 ## O'zgarishlar (2025-10-19)
 
 ### 3. Asenkron (Parallel) ishlov berish tizimi ✅

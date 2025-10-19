@@ -263,10 +263,51 @@ class Database:
                 "code": row[1],
                 "work_type": row[2],
                 "discount_percent": row[3],
-                "expiry_date": row[4],
-                "active": row[5]
+                "usage_type": row[4] if len(row) > 4 else "unlimited",
+                "used_by": row[5] if len(row) > 5 else "[]",
+                "expiry_date": row[6] if len(row) > 6 else None,
+                "active": row[7] if len(row) > 7 else 1
             }
         return None
+    
+    def get_all_promocodes(self) -> list:
+        """Barcha promokodlarni olish"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM promocodes ORDER BY id DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        promocodes = []
+        for row in rows:
+            promocodes.append({
+                "id": row[0],
+                "code": row[1],
+                "work_type": row[2],
+                "discount_percent": row[3],
+                "usage_type": row[4] if len(row) > 4 else "unlimited",
+                "used_by": row[5] if len(row) > 5 else "[]",
+                "expiry_date": row[6] if len(row) > 6 else None,
+                "active": row[7] if len(row) > 7 else 1
+            })
+        
+        return promocodes
+    
+    def delete_promocode(self, promo_id: int) -> bool:
+        """Promokodni o'chirish"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("DELETE FROM promocodes WHERE id = ?", (promo_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Promokod o'chirishda xatolik: {e}")
+            return False
     
     def get_setting(self, key: str, default: str = "") -> str:
         """Sozlama olish"""

@@ -567,6 +567,109 @@ async def reject_payment(callback: CallbackQuery, bot):
     )
     await callback.answer("❌ To'lov rad etildi.", show_alert=True)
 
+@router.message(F.text == "📋 Promokodlar ro'yxati")
+async def promocodes_list(message: Message):
+    """Promokodlar ro'yxatini ko'rsatish"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    promocodes = db.get_all_promocodes()
+    
+    if not promocodes:
+        await message.answer("📋 Hozircha promokodlar yo'q.", reply_markup=get_admin_menu())
+        return
+    
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    
+    text = "📋 Yaratilgan promokodlar:\n\n"
+    
+    for promo in promocodes:
+        work_type_name = "Kurs ishi" if promo['work_type'] == "kurs_ishi" else "Maqola"
+        
+        if promo['usage_type'] == "one_time":
+            usage_desc = "1 martalik"
+        elif promo['usage_type'] == "per_user":
+            usage_desc = "Har bir user uchun 1 marta"
+        else:
+            usage_desc = "Cheksiz"
+        
+        status = "✅ Faol" if promo['active'] == 1 else "❌ O'chirilgan"
+        
+        text += f"🎟 {promo['code']}\n"
+        text += f"   📝 {work_type_name} | 💰 {promo['discount_percent']}%\n"
+        text += f"   ⏱ {usage_desc} | {status}\n\n"
+    
+    # Har bir promokod uchun o'chirish tugmasini qo'shamiz
+    keyboard_buttons = []
+    for promo in promocodes:
+        if promo['active'] == 1:
+            keyboard_buttons.append([
+                InlineKeyboardButton(
+                    text=f"🗑 {promo['code']} ni o'chirish",
+                    callback_data=f"delete_promo_{promo['id']}"
+                )
+            ])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons) if keyboard_buttons else None
+    
+    await message.answer(text, reply_markup=keyboard)
+
+@router.callback_query(F.data.startswith("delete_promo_"))
+async def delete_promocode_callback(callback: CallbackQuery):
+    """Promokodni o'chirish"""
+    if not is_admin(callback.from_user.id):
+        await callback.answer("❌ Sizda admin huquqlari yo'q.", show_alert=True)
+        return
+    
+    promo_id = int(callback.data.split("_")[-1])
+    
+    # Promokodni o'chirish
+    if db.delete_promocode(promo_id):
+        await callback.answer("✅ Promokod o'chirildi!", show_alert=True)
+        
+        # Yangilangan ro'yxatni ko'rsatish
+        promocodes = db.get_all_promocodes()
+        
+        if not promocodes:
+            await callback.message.edit_text("📋 Hozircha promokodlar yo'q.")
+            return
+        
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        
+        text = "📋 Yaratilgan promokodlar:\n\n"
+        
+        for promo in promocodes:
+            work_type_name = "Kurs ishi" if promo['work_type'] == "kurs_ishi" else "Maqola"
+            
+            if promo['usage_type'] == "one_time":
+                usage_desc = "1 martalik"
+            elif promo['usage_type'] == "per_user":
+                usage_desc = "Har bir user uchun 1 marta"
+            else:
+                usage_desc = "Cheksiz"
+            
+            status = "✅ Faol" if promo['active'] == 1 else "❌ O'chirilgan"
+            
+            text += f"🎟 {promo['code']}\n"
+            text += f"   📝 {work_type_name} | 💰 {promo['discount_percent']}%\n"
+            text += f"   ⏱ {usage_desc} | {status}\n\n"
+        
+        keyboard_buttons = []
+        for promo in promocodes:
+            if promo['active'] == 1:
+                keyboard_buttons.append([
+                    InlineKeyboardButton(
+                        text=f"🗑 {promo['code']} ni o'chirish",
+                        callback_data=f"delete_promo_{promo['id']}"
+                    )
+                ])
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons) if keyboard_buttons else None
+        
+        await callback.message.edit_text(text, reply_markup=keyboard)
+    else:
+        await callback.answer("❌ Xatolik yuz berdi.", show_alert=True)
+
 @router.message(F.text == "🏠 Foydalanuvchi menyusi")
 async def back_to_user_menu(message: Message):
     """Foydalanuvchi menyusiga qaytish"""

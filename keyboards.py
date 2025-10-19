@@ -20,7 +20,8 @@ def get_admin_menu():
             [KeyboardButton(text="📢 Ommaviy xabar"), KeyboardButton(text="💬 ID orqali xabar")],
             [KeyboardButton(text="💳 Balans boshqarish"), KeyboardButton(text="📊 Statistika")],
             [KeyboardButton(text="🤝 Referal sozlamalari"), KeyboardButton(text="💸 Narxlarni boshqarish")],
-            [KeyboardButton(text="🎟 Promokod yaratish"), KeyboardButton(text="🏠 Foydalanuvchi menyusi")]
+            [KeyboardButton(text="🎟 Promokod yaratish"), KeyboardButton(text="📋 Promokodlar ro'yxati")],
+            [KeyboardButton(text="🏠 Foydalanuvchi menyusi")]
         ],
         resize_keyboard=True
     )
