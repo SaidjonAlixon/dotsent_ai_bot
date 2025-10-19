@@ -18,7 +18,7 @@ def get_main_menu():
             [KeyboardButton(text="🧾 Kurs ishi yozish"), KeyboardButton(text="📰 Maqola yozish")],
             [KeyboardButton(text="💰 Balansim"), KeyboardButton(text="💵 Pul ishlash")],
             [KeyboardButton(text="👤 Profil"), KeyboardButton(text="🎁 Promokodlarim")],
-            [KeyboardButton(text="❓ Yordam")]
+            [KeyboardButton(text="📄 Word → PDF"), KeyboardButton(text="❓ Yordam")]
         ],
         resize_keyboard=True
     )
