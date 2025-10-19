@@ -3,6 +3,44 @@ from docx.shared import Pt, Inches, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+import re
+
+
+def clean_article_content(content):
+    """Maqola matnidagi ortiqcha belgilarni olib tashlash"""
+    if not content:
+        return content
+    
+    lines = content.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        # Bo'sh qatorlarni o'tkazib yuborish
+        if not line.strip():
+            continue
+        
+        # "###" belgisini olib tashlash
+        if line.strip().startswith('###'):
+            continue
+        
+        # Sarlavhalarni olib tashlash
+        if line.strip() in ['KIRISH', 'TADQIQOT USLUBLARI', 'NATIJALAR VA MUHOKAMA', 'XULOSA']:
+            continue
+        
+        # Qalin sarlavha belgisini olib tashlash (**Sarlavha**)
+        if line.strip().startswith('**') and line.strip().endswith('**'):
+            continue
+        
+        cleaned_lines.append(line)
+    
+    # Matnni qayta birlashtirish va ortiqcha bo'shliqlarni olib tashlash
+    result = ' '.join(' '.join(cleaned_lines).split())
+    
+    # Agar matn bo'sh bo'lsa, asl matnni qaytarish
+    if not result:
+        return ' '.join(content.split())
+    
+    return result
 
 
 def create_article_document(sections, user_data, file_path):
@@ -193,8 +231,8 @@ def create_article_document(sections, user_data, file_path):
             p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            # Matnni uzluksiz yozish
-            clean_text = ' '.join(content.split())
+            # Matnni tozalash va uzluksiz yozish
+            clean_text = clean_article_content(content)
             p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
@@ -210,8 +248,8 @@ def create_article_document(sections, user_data, file_path):
             p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            # Matnni uzluksiz yozish
-            clean_text = ' '.join(content.split())
+            # Matnni tozalash va uzluksiz yozish
+            clean_text = clean_article_content(content)
             p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
@@ -227,8 +265,8 @@ def create_article_document(sections, user_data, file_path):
             p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            # Matnni uzluksiz yozish
-            clean_text = ' '.join(content.split())
+            # Matnni tozalash va uzluksiz yozish
+            clean_text = clean_article_content(content)
             p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
@@ -244,8 +282,8 @@ def create_article_document(sections, user_data, file_path):
             p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            # Matnni uzluksiz yozish
-            clean_text = ' '.join(content.split())
+            # Matnni tozalash va uzluksiz yozish
+            clean_text = clean_article_content(content)
             p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             

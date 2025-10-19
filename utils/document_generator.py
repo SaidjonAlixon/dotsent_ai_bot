@@ -5,6 +5,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import os
 import random
+import re
 
 
 def add_footnote(run, footnote_text, footnote_id):
@@ -63,6 +64,44 @@ def add_random_footnotes(paragraph, min_count=1, max_count=2):
         # ESLATMA: python-docx da footnote to'liq qo'llab-quvvatlanmaydi
         # Shuning uchun biz faqat superscript raqamlar qo'shamiz
         # Real footnote uchun MS Word'da manual qo'shish kerak bo'ladi
+
+
+def clean_subsection_content(content):
+    """Matn boshidagi ortiqcha belgilarni olib tashlash (###, 1.1., va h.k.)"""
+    if not content:
+        return content
+    
+    lines = content.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        # Bo'sh qatorlarni o'tkazib yuborish
+        if not line.strip():
+            continue
+        
+        # "###" belgisini olib tashlash
+        if line.strip().startswith('###'):
+            continue
+        
+        # Raqamli sarlavhalarni olib tashlash (1.1., 2.1., 3.1. va h.k.)
+        if re.match(r'^\d+\.\d+\.?\s*$', line.strip()):
+            continue
+        
+        # Sarlavha belgisi bor qatorlarni (masalan: "1.1. Nazariy asoslar") olib tashlash
+        # Faqat raqam + nuqta + matn ko'rinishidagi qatorlarni tozalash
+        if re.match(r'^\d+\.\d+\.?\s+[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ]', line.strip()):
+            continue
+        
+        cleaned_lines.append(line)
+    
+    # Matnni qayta birlashtirish
+    result = '\n'.join(cleaned_lines).strip()
+    
+    # Agar matn bo'sh bo'lsa, asl matnni qaytarish
+    if not result:
+        return content
+    
+    return result
 
 
 def create_word_document(sections, user_data, file_path):
@@ -176,7 +215,8 @@ def create_word_document(sections, user_data, file_path):
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p.paragraph_format.space_before = Pt(12)
                 
-                subsection_content = subsection['content']
+                # Matnni tozalash - ortiqcha belgilarni olib tashlash
+                subsection_content = clean_subsection_content(subsection['content'])
                 p = doc.add_paragraph(subsection_content)
                 p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 p.paragraph_format.first_line_indent = Cm(1.25)
