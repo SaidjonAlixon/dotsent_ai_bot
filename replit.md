@@ -50,6 +50,17 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
   - Bosganda foydalanuvchi qo'llab-quvvatlash guruhiga yo'naltiriladi
   - **"🔙 Orqaga"** tugmasi - asosiy menyuga qaytish
 
+### PDF konvertatsiya tizimi ✅
+- Kurs ishi va maqola tayyor bo'lganda **"📄 Word faylni PDF qilish"** tugmasi ko'rsatiladi
+- Fayl haqida batafsil ma'lumot:
+  - DOCX formatda - kompyuterda o'zgartirish mumkin
+  - Telefonda ochilmasa, PDF qilish kerak
+- **PDF konvertatsiya:**
+  - LibreOffice CLI orqali DOCX → PDF
+  - Tugma bosilganda avtomatik PDF yaratiladi va yuboriladi
+  - PDF fayldan keyin o'chiriladi (joy tejash uchun)
+- Xatolik bo'lsa, foydalanuvchiga qo'lda PDF qilish ko'rsatmasi beriladi
+
 ## O'zgarishlar (2025-10-19)
 
 ### 3. Asenkron (Parallel) ishlov berish tizimi ✅
@@ -256,9 +267,11 @@ Bot endi professional ilmiy maqola ham yarata oladi!
 - [x] Xat boshi (1.25 sm) - O'zbekiston standartlari
 - [x] Statistikada blok qilgan foydalanuvchilar soni
 - [x] Ommaviy xabar yuborishda blok qilganlar hisobi
+- [x] Namuna fayllarni ko'rish (URL tugmalar)
+- [x] Qo'llab-quvvatlash guruhi (URL tugma)
+- [x] PDF export funksiyasi (LibreOffice CLI)
+- [x] Annotatsiyalardan keyin bo'sh sahifa muammosi hal qilindi
 - [ ] "Yana yozish" va "Asosiy menyu" tugmalari
-- [ ] "Namuna ishni ko'rish" funksiyasi
-- [ ] PDF export funksiyasi (docx2pdf)
 - [ ] Telegram Payment API integratsiyasi (Click, Payme)
 - [ ] Ko'p tillilik (🇺🇿 O'zbek, 🇷🇺 Rus)
 - [ ] Avtomatik backup tizimi

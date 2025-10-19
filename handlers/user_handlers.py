@@ -6,16 +6,17 @@ from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 import logging
 import asyncio
+import os
 
 from database import Database
 from keyboards import (get_main_menu, get_cancel_button, get_balance_buttons, 
-                        get_service_info_buttons, get_payment_amount_buttons, get_support_buttons)
+                        get_service_info_buttons, get_payment_amount_buttons, get_support_buttons,
+                        get_pdf_convert_button)
 from utils.course_writer import generate_course_work
 from utils.document_generator import create_word_document
 from utils.article_writer import generate_article
 from utils.article_document_generator import create_article_document
 import config
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +59,23 @@ async def process_course_work_background(bot, telegram_id, user_data_for_ai, pri
             file_link = docx_path
         
         document_file_user = FSInputFile(docx_path)
+        
+        info_text = (
+            f"✅ Kurs ishingiz tayyor!\n\n"
+            f"📚 Mavzu: {data['topic']}\n"
+            f"💰 To'langan: {price:,} so'm\n\n"
+            f"📝 **Fayl haqida:**\n"
+            f"• Fayl Word (DOCX) formatda\n"
+            f"• Kompyuterda Word orqali ochib o'zgartirish kiritishingiz mumkin\n"
+            f"• Agar telefoningizda ochilmasa yoki xato ko'rsatsa, pastdagi tugma orqali PDF qiling va ko'ring"
+        )
+        
         await bot.send_document(
             chat_id=telegram_id,
             document=document_file_user,
-            caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {data['topic']}\n💰 To'langan: {price:,} so'm"
+            caption=info_text,
+            parse_mode="Markdown",
+            reply_markup=get_pdf_convert_button(docx_path)
         )
         
         db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
@@ -112,10 +126,23 @@ async def process_article_background(bot, telegram_id, user_data_for_ai, price, 
             file_link = filepath
         
         document_file_user = FSInputFile(filepath)
+        
+        info_text = (
+            f"✅ Maqolangiz tayyor!\n\n"
+            f"📝 Mavzu: {topic}\n"
+            f"💰 To'langan: {price:,} so'm\n\n"
+            f"📝 **Fayl haqida:**\n"
+            f"• Fayl Word (DOCX) formatda\n"
+            f"• Kompyuterda Word orqali ochib o'zgartirish kiritishingiz mumkin\n"
+            f"• Agar telefoningizda ochilmasa yoki xato ko'rsatsa, pastdagi tugma orqali PDF qiling va ko'ring"
+        )
+        
         await bot.send_document(
             chat_id=telegram_id,
             document=document_file_user,
-            caption=f"✅ Maqolangiz tayyor!\n\n📝 Mavzu: {topic}\n💰 To'langan: {price:,} so'm"
+            caption=info_text,
+            parse_mode="Markdown",
+            reply_markup=get_pdf_convert_button(filepath)
         )
         
         db.add_order(telegram_id, "maqola", topic, price, file_link)
@@ -747,6 +774,72 @@ async def back_to_menu_callback(callback: CallbackQuery):
         "Asosiy menyu:",
         reply_markup=get_main_menu()
     )
+
+@router.callback_query(F.data.startswith("convert_to_pdf:"))
+async def convert_to_pdf_callback(callback: CallbackQuery):
+    """DOCX faylni PDF ga o'tkazish"""
+    await callback.answer("PDF yaratilmoqda, iltimos kuting...")
+    
+    try:
+        # Fayl yo'lini olish
+        file_path = callback.data.split("convert_to_pdf:", 1)[1]
+        
+        if not os.path.exists(file_path):
+            await callback.message.answer(
+                "❌ Fayl topilmadi. Iltimos, qayta urinib ko'ring."
+            )
+            return
+        
+        # PDF fayl nomi
+        pdf_path = file_path.replace('.docx', '.pdf')
+        
+        # LibreOffice orqali PDF ga o'tkazish
+        import subprocess
+        
+        output_dir = os.path.dirname(file_path)
+        
+        # LibreOffice CLI orqali konvertatsiya
+        result = subprocess.run(
+            ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, file_path],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        if result.returncode == 0 and os.path.exists(pdf_path):
+            # PDF faylni yuborish
+            pdf_file = FSInputFile(pdf_path)
+            await callback.message.answer_document(
+                document=pdf_file,
+                caption="📄 PDF formatda tayyor!\n\nEndi telefoningizda ham muammosiz ochiladi."
+            )
+            
+            # PDF faylni o'chirish (joy tejash uchun)
+            try:
+                os.remove(pdf_path)
+            except:
+                pass
+        else:
+            # Agar LibreOffice ishlamasa
+            await callback.message.answer(
+                "❌ PDF yaratishda xatolik yuz berdi.\n\n"
+                "Iltimos, DOCX faylni kompyuteringizda Word orqali oching va "
+                "\"Save As\" → \"PDF\" orqali PDF qiling."
+            )
+            logger.error(f"PDF conversion failed: {result.stderr}")
+    
+    except subprocess.TimeoutExpired:
+        await callback.message.answer(
+            "❌ PDF yaratish juda uzoq davom etdi.\n\n"
+            "Iltimos, DOCX faylni kompyuteringizda PDF qiling."
+        )
+    except Exception as e:
+        logger.error(f"PDF konvertatsiya xatoligi: {e}")
+        await callback.message.answer(
+            "❌ PDF yaratishda xatolik yuz berdi.\n\n"
+            "Iltimos, DOCX faylni kompyuteringizda Word orqali oching va "
+            "\"Save As\" → \"PDF\" orqali PDF qiling."
+        )
 
 @router.message(F.text == "❓ Yordam")
 async def help_handler(message: Message):

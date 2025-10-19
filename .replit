@@ -4,7 +4,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["pandoc"]
+packages = ["pandoc", "libreoffice"]
 
 [workflows]
 runButton = "Project"

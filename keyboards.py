@@ -128,6 +128,15 @@ def get_support_buttons(support_url: str):
     )
     return keyboard
 
+def get_pdf_convert_button(file_path: str):
+    """PDF ga o'tkazish tugmasi"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📄 Word faylni PDF qilish", callback_data=f"convert_to_pdf:{file_path}")]
+        ]
+    )
+    return keyboard
+
 def get_payment_amount_buttons():
     """To'lov miqdori tugmalari"""
     keyboard = ReplyKeyboardMarkup(
