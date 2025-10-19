@@ -103,14 +103,26 @@ def get_promo_usage_type_buttons():
     )
     return keyboard
 
-def get_service_info_buttons(service_type: str):
+def get_service_info_buttons(service_type: str, sample_url: str):
     """Xizmat ma'lumoti tugmalari"""
     from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
     
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📄 Namunani ko'rish", callback_data=f"view_sample_{service_type}")],
+            [InlineKeyboardButton(text="📄 Namunani ko'rish", url=sample_url)],
             [InlineKeyboardButton(text="✅ Roziman", callback_data=f"accept_service_{service_type}")],
+            [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_menu")]
+        ]
+    )
+    return keyboard
+
+def get_support_buttons(support_url: str):
+    """Yordam tugmalari"""
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👥 Qo'llab-quvvatlash guruhi", url=support_url)],
             [InlineKeyboardButton(text="🔙 Orqaga", callback_data="back_to_menu")]
         ]
     )

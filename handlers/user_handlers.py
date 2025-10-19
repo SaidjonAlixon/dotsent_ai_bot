@@ -9,7 +9,7 @@ import asyncio
 
 from database import Database
 from keyboards import (get_main_menu, get_cancel_button, get_balance_buttons, 
-                        get_service_info_buttons, get_payment_amount_buttons)
+                        get_service_info_buttons, get_payment_amount_buttons, get_support_buttons)
 from utils.course_writer import generate_course_work
 from utils.document_generator import create_word_document
 from utils.article_writer import generate_article
@@ -205,7 +205,7 @@ async def kurs_ishi_handler(message: Message, state: FSMContext):
     
     await message.answer(
         info_text,
-        reply_markup=get_service_info_buttons("kurs"),
+        reply_markup=get_service_info_buttons("kurs", config.KURS_ISHI_SAMPLE_URL),
         parse_mode="Markdown"
     )
 
@@ -364,7 +364,7 @@ async def maqola_handler(message: Message, state: FSMContext):
     
     await message.answer(
         info_text,
-        reply_markup=get_service_info_buttons("maqola"),
+        reply_markup=get_service_info_buttons("maqola", config.MAQOLA_SAMPLE_URL),
         parse_mode="Markdown"
     )
 
@@ -691,44 +691,6 @@ async def process_promocode(message: Message, state: FSMContext):
     
     await state.clear()
 
-@router.callback_query(F.data.startswith("view_sample_"))
-async def view_sample_callback(callback: CallbackQuery):
-    """Namunani ko'rish"""
-    service_type = callback.data.split("_")[-1]
-    
-    if service_type == "kurs":
-        sample_text = (
-            "📄 **Kurs ishi namunasi:**\n\n"
-            "Namuna hozircha tayyorlanmoqda...\n\n"
-            "Siz yaratgan kurs ishi quyidagilarni o'z ichiga oladi:\n"
-            "• Titul varaq\n"
-            "• Reja\n"
-            "• KIRISH (3-4 bet)\n"
-            "• I BOB - Nazariy asoslar (8-10 bet)\n"
-            "• II BOB - Amaliy tahlil (10-12 bet)\n"
-            "• III BOB - Takliflar (8-10 bet)\n"
-            "• XULOSA (3-4 bet)\n"
-            "• ADABIYOTLAR (25+ manba)\n"
-            "• ILOVALAR\n"
-            "• MUNDARIJA"
-        )
-    else:
-        sample_text = (
-            "📄 **Maqola namunasi:**\n\n"
-            "Namuna hozircha tayyorlanmoqda...\n\n"
-            "Siz yaratgan maqola quyidagilarni o'z ichiga oladi:\n"
-            "• Sarlavha va muallif ma'lumotlari\n"
-            "• Annotatsiya (3 tilda)\n"
-            "• Kalit so'zlar (3 tilda)\n"
-            "• KIRISH\n"
-            "• TADQIQOT USLUBLARI\n"
-            "• NATIJALAR VA MUHOKAMA\n"
-            "• XULOSA\n"
-            "• FOYDALANILGAN ADABIYOTLAR (APA format)"
-        )
-    
-    await callback.answer()
-    await callback.message.answer(sample_text, parse_mode="Markdown")
 
 @router.callback_query(F.data.startswith("accept_service_"))
 async def accept_service_callback(callback: CallbackQuery, state: FSMContext):
@@ -789,16 +751,19 @@ async def back_to_menu_callback(callback: CallbackQuery):
 @router.message(F.text == "❓ Yordam")
 async def help_handler(message: Message):
     """Yordam"""
-    help_text = """❓ Yordam
+    help_text = """❓ **Yordam**
 
-🔹 Kurs ishi yozish - Mavzuni kiriting va AI tayyorlaydi
-🔹 Maqola yozish - Maqola mavzusini kiriting
-🔹 Balansim - Hisobingizni to'ldiring va ko'ring
-🔹 Pul ishlash - Referal havolangizni ulashing
-🔹 Profil - Shaxsiy ma'lumotlaringiz
-🔹 Promokodlarim - Chegirmalardan foydalaning
+🔹 **Kurs ishi yozish** - Mavzuni kiriting va AI tayyorlaydi
+🔹 **Maqola yozish** - Maqola mavzusini kiriting
+🔹 **Balansim** - Hisobingizni to'ldiring va ko'ring
+🔹 **Pul ishlash** - Referal havolangizni ulashing
+🔹 **Profil** - Shaxsiy ma'lumotlaringiz
+🔹 **Promokodlarim** - Chegirmalardan foydalaning
 
-💬 Admin bilan bog'lanish: /admin
-📞 Texnik yordam: @support"""
+💬 Savollaringiz bo'lsa, qo'llab-quvvatlash guruhiga qo'shiling:"""
     
-    await message.answer(help_text)
+    await message.answer(
+        help_text, 
+        reply_markup=get_support_buttons(config.SUPPORT_GROUP_URL),
+        parse_mode="Markdown"
+    )

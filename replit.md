@@ -33,7 +33,7 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 - "🧾 Kurs ishi yozish" va "📰 Maqola yozish" tugmalari yangilandi
 - Tugma bosilganda:
   1. **Xizmat ma'lumoti** ko'rsatiladi (narx, muddat, tafsilotlar)
-  2. **"📄 Namunani ko'rish"** tugmasi - xizmat namunasi
+  2. **"📄 Namunani ko'rish"** tugmasi - **URL tugma, havolaga o'tadi** (ENV: `KURS_ISHI_SAMPLE_URL`, `MAQOLA_SAMPLE_URL`)
   3. **"✅ Roziman"** tugmasi - xizmatni qabul qilish
   4. **"🔙 Orqaga"** tugmasi - bekor qilish
 - "Roziman" bosganda:
@@ -42,6 +42,13 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
     - Hozirgi balans va yetmayotgan summa
     - "💵 Balansni to'ldirish" tugmasi
 - Balans to'ldirilgandan keyin, foydalanuvchi qayta tugmani bosishi kerak
+
+### Yordam bo'limi va qo'llab-quvvatlash guruhi ✅
+- "❓ Yordam" tugmasi yangilandi
+- Yordam matnida inline tugma qo'shildi:
+  - **"👥 Qo'llab-quvvatlash guruhi"** - URL tugma (ENV: `SUPPORT_GROUP_URL`)
+  - Bosganda foydalanuvchi qo'llab-quvvatlash guruhiga yo'naltiriladi
+  - **"🔙 Orqaga"** tugmasi - asosiy menyuga qaytish
 
 ## O'zgarishlar (2025-10-19)
 

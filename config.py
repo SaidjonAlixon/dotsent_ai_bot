@@ -13,3 +13,10 @@ TOLOV_TASDIQLASH_CHANNEL_ID = os.getenv("TOLOV_TASDIQLASH_CHANNEL_ID", "")
 DEFAULT_KURS_ISH_PRICE = 25000
 DEFAULT_MAQOLA_PRICE = 20000
 DEFAULT_REFERAL_BONUS = 5000
+
+# Namuna fayl havolalari
+KURS_ISHI_SAMPLE_URL = os.getenv("KURS_ISHI_SAMPLE_URL", "https://t.me/example")
+MAQOLA_SAMPLE_URL = os.getenv("MAQOLA_SAMPLE_URL", "https://t.me/example")
+
+# Qo'llab-quvvatlash guruhi
+SUPPORT_GROUP_URL = os.getenv("SUPPORT_GROUP_URL", "https://t.me/example")
