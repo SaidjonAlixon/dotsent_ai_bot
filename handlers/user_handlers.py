@@ -8,8 +8,9 @@ import logging
 
 from database import Database
 from keyboards import get_main_menu, get_cancel_button, get_balance_buttons
-from utils.openai_handler import generate_kurs_ishi, generate_maqola
+from utils.openai_handler import generate_kurs_ishi_full, generate_maqola
 from utils.docx_creator import create_docx
+from utils.docx_creator_professional import create_kurs_ishi_docx
 import config
 
 logger = logging.getLogger(__name__)
@@ -197,9 +198,6 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
     )
     
     try:
-        from utils.openai_handler import generate_kurs_ishi_full
-        from utils.docx_creator import create_kurs_ishi_docx
-        
         content = await generate_kurs_ishi_full(
             topic=data['topic'],
             subject=data['subject'],
