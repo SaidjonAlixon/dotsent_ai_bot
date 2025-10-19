@@ -153,6 +153,22 @@ def create_word_document(sections, user_data, file_path):
                         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             doc.add_page_break()
         
+        elif section_type == 'toc':
+            p = doc.add_paragraph('MUNDARIJA')
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.runs[0].font.bold = True
+            p.runs[0].font.size = Pt(14)
+            
+            content = section_data['content']
+            lines = content.split('\n')
+            for line in lines:
+                if line.strip():
+                    p = doc.add_paragraph(line)
+                    if line.startswith('I ') or line.startswith('II ') or line.startswith('III ') or line.isupper():
+                        p.runs[0].font.bold = True
+                        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    else:
+                        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     
     doc.save(file_path)
     return file_path

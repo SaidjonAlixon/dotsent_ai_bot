@@ -151,6 +151,9 @@ async def generate_course_work(user_data):
 
     appendix_content = generate_appendix()
     sections.append({'type': 'appendix', 'content': appendix_content})
+    
+    toc_content = plan_content
+    sections.append({'type': 'toc', 'content': toc_content})
 
     return sections
 
