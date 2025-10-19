@@ -262,6 +262,48 @@ Boshlash uchun quyidagi tugmalardan birini tanlang! 👇"""
     
     await message.answer(welcome_text, reply_markup=get_main_menu())
 
+@router.callback_query(F.data == "check_subscription")
+async def check_subscription_callback(callback: CallbackQuery, bot):
+    """'Obuna bo'ldim' tugmasi bosilganda tekshirish"""
+    telegram_id = callback.from_user.id
+    full_name = callback.from_user.full_name or "Foydalanuvchi"
+    
+    # Agar kanal ID lari mavjud bo'lsa tekshiramiz
+    if not config.REQUIRED_CHANNEL_1 or not config.REQUIRED_CHANNEL_2:
+        await callback.answer("⚠️ Majburiy obuna o'rnatilmagan.", show_alert=True)
+        return
+    
+    # Ikkala kanalga ham obuna bo'lganligini tekshirish
+    is_subscribed_1 = await check_subscription(bot, telegram_id, config.REQUIRED_CHANNEL_1)
+    is_subscribed_2 = await check_subscription(bot, telegram_id, config.REQUIRED_CHANNEL_2)
+    
+    if is_subscribed_1 and is_subscribed_2:
+        # Obuna bo'lgan - asosiy menyuni ko'rsatish
+        await callback.message.edit_text(
+            f"✅ <b>Obuna tasdiqlandi!</b>\n\n"
+            f"Xush kelibsiz, {full_name}! 🎉\n\n"
+            f"Endi botdan to'liq foydalanishingiz mumkin.",
+            parse_mode="HTML"
+        )
+        await callback.message.answer(
+            "📋 Quyidagi xizmatlardan birini tanlang:",
+            reply_markup=get_main_menu()
+        )
+        await callback.answer()
+    else:
+        # Hali ham obuna bo'lmagan
+        not_subscribed = []
+        if not is_subscribed_1:
+            not_subscribed.append("1-kanal")
+        if not is_subscribed_2:
+            not_subscribed.append("2-kanal")
+        
+        await callback.answer(
+            f"❌ Siz {', '.join(not_subscribed)}ga obuna bo'lmadingiz!\n\n"
+            f"Iltimos, barcha kanallarga obuna bo'ling va qayta urinib ko'ring.",
+            show_alert=True
+        )
+
 @router.message(F.text == "🧾 Kurs ishi yozish")
 async def kurs_ishi_handler(message: Message, state: FSMContext):
     """Kurs ishi yozish - narx va ma'lumot"""
