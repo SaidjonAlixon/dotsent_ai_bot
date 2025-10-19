@@ -69,7 +69,8 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
   3. Tasdiqlanadi va foydalanuvchi cheklanadi
 - **Cheklangan foydalanuvchi:**
   - Botdan **umuman foydalana olmaydi**
-  - `/start` bossa: "Sizning botdan foydalanish huquqingiz yo'q" xabari
+  - Hech qanday tugma yoki buyruq ishlamaydi (Middleware orqali bloklangan)
+  - Har qanday harakatda: "Sizning botdan foydalanish huquqingiz yo'q" xabari
   - Qo'llab-quvvatlash guruhiga yo'naltirish tugmasi ko'rsatiladi
 - **Cheklovni olib tashlash:**
   1. Admin "✅ Cheklovni olib tashlash" tugmasini bosadi
@@ -78,6 +79,8 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 - **Xususiyatlar:**
   - Admin o'zini cheklay olmaydi
   - Allaqachon cheklangan/cheklanmagan foydalanuvchi haqida ogohlantirish
+  - **BanCheckMiddleware** - barcha message va callback query'larni avtomatik bloklaydi
+  - Admin handlerlar middleware dan ozod (admin hech qachon bloklanmaydi)
   - Database: `is_blocked` ustuni, `ban_user()`, `unban_user()`, `is_user_banned()` funksiyalari
 
 ## O'zgarishlar (2025-10-19)
