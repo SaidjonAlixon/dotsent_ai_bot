@@ -146,7 +146,7 @@ async def generate_course_work(user_data):
         max_words=2000)
     sections.append({'type': 'conclusion', 'content': conclusion_content})
 
-    references_content = generate_references(subject)
+    references_content = generate_references(subject, topic)
     sections.append({'type': 'references', 'content': references_content})
 
     appendix_content = generate_appendix()
@@ -203,7 +203,59 @@ Toshkent – 2025
 
 
 def generate_plan(subject, topic):
-    return """KIRISH
+    try:
+        prompt = f"""Fan: {subject}
+Mavzu: {topic}
+
+Yuqoridagi mavzu bo'yicha kurs ishi uchun REJA tuzing. 
+
+Reja quyidagi formatda bo'lishi kerak:
+
+KIRISH
+
+I BOB. [Mavzuga mos 1-bob sarlavhasi - NAZARIY ASOSLAR]
+1.1. [Mavzuga mos 1.1-band sarlavhasi]
+1.2. [Mavzuga mos 1.2-band sarlavhasi]
+
+II BOB. [Mavzuga mos 2-bob sarlavhasi - AMALIY TAHLIL]
+2.1. [Mavzuga mos 2.1-band sarlavhasi]
+2.2. [Mavzuga mos 2.2-band sarlavhasi]
+
+III BOB. [Mavzuga mos 3-bob sarlavhasi - TAKLIFLAR]
+3.1. [Mavzuga mos 3.1-band sarlavhasi]
+3.2. [Mavzuga mos 3.2-band sarlavhasi]
+
+XULOSA
+
+FOYDALANILGAN ADABIYOTLAR RO'YXATI
+
+ILOVALAR
+
+MUHIM: 
+- Faqat rejani yozing, boshqa hech narsa yozilmasin
+- Har bir bob va band sarlavhasi mavzuga to'g'ridan-to'g'ri bog'liq bo'lishi kerak
+- Sarlavhalar aniq, qisqa va professional bo'lishi kerak
+- Faqat yuqoridagi formatda yozing"""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Siz kurs ishi uchun professional reja tuzuvchisiz. Faqat reja matnini qaytaring, boshqa hech narsa yozmang."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        plan = response.choices[0].message.content.strip()
+        return plan
+        
+    except Exception as e:
+        print(f"Reja yaratishda xatolik: {e}")
+        return """KIRISH
 
 I BOB. NAZARIY ASOSLAR VA ADABIYOTLAR TAHLILI
 1.1. Asosiy tushunchalar va nazariy asoslar
@@ -224,8 +276,52 @@ FOYDALANILGAN ADABIYOTLAR RO'YXATI
 ILOVALAR"""
 
 
-def generate_references(subject):
-    return """1. O'zbekiston Respublikasining Ta'lim to'g'risidagi Qonuni. – T.: 2020.
+def generate_references(subject, topic):
+    try:
+        prompt = f"""Fan: {subject}
+Mavzu: {topic}
+
+Yuqoridagi mavzu bo'yicha kurs ishi uchun FOYDALANILGAN ADABIYOTLAR RO'YXATI tuzing.
+
+Adabiyotlar ro'yxati quyidagilarni o'z ichiga olishi kerak:
+1. O'zbekiston qonunlari va me'yoriy hujjatlar (2-3 ta)
+2. O'zbek mualliflarining kitoblari (5-7 ta)
+3. Rus va xorijiy mualliflarning kitoblari (5-7 ta)
+4. Ilmiy jurnallar va maqolalar (3-5 ta)
+5. Internet manbalari (3-5 ta)
+
+JAMI: kamida 25 ta manba
+
+Format:
+1. Muallif. Kitob nomi. – Nashr: Nashriyot, yil.
+2. ...
+
+MUHIM:
+- Faqat adabiyotlar ro'yxatini yozing
+- Har bir manba mavzuga mos bo'lishi kerak
+- Manbalar haqiqiy ko'rinishda bo'lishi kerak (real muallif va kitob nomlari)
+- Kamida 25 ta manba bo'lishi shart
+- Raqamli tartibda yozing"""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Siz kurs ishi uchun professional adabiyotlar ro'yxati tuzuvchisiz. Faqat adabiyotlar ro'yxatini qaytaring."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.7
+        )
+        
+        references = response.choices[0].message.content.strip()
+        return references
+        
+    except Exception as e:
+        print(f"Adabiyotlar yaratishda xatolik: {e}")
+        return """1. O'zbekiston Respublikasining Ta'lim to'g'risidagi Qonuni. – T.: 2020.
 2. O'zbekiston Respublikasi Prezidentining Farmonlari va Qarorlari to'plami. – T.: 2020-2025.
 3. Karimov I.A. Yuksak ma'naviyat – yengilmas kuch. – T.: Ma'naviyat, 2008.
 4. Mirziyoyev Sh.M. Tanqidiy tahlil, qat'iy tartib-intizom va shaxsiy javobgarlik – har bir rahbar faoliyatining kundalik qoidasi bo'lishi kerak. – T.: O'zbekiston, 2017.

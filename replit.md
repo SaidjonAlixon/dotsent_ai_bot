@@ -6,10 +6,11 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
-### YANGI: AI orqali mavzuga asoslangan REJA va MUNDARIJA yaratish
+### YANGI: AI orqali mavzuga asoslangan REJA, MUNDARIJA va ADABIYOTLAR yaratish
 - **REJA** endi mavzu va fanga qarab GPT-4o Mini orqali yaratiladi
 - Har bir bob va band sarlavhasi mavzuga to'liq mos keladi
 - **MUNDARIJA** ham REJA kabi dinamik - AI yaratgan REJA asosida tuziladi
+- **ADABIYOTLAR** ro'yxati ham mavzuga asoslangan - AI orqali mavzuga mos 25+ manba yaratiladi
 - Dinamik va professional reja tuzilishi
 - Agar xatolik bo'lsa, standart reja qaytariladi
 
