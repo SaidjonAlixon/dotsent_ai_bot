@@ -21,18 +21,19 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
   - Kurs ishi mavzusi
   - Kurs raqami (1, 2, 3, 4)
 
-### 2. Professional kurs ishi yaratish (35-40 bet)
+### 2. Professional kurs ishi yaratish (35-40 bet) - GPT-4o bilan
 - Har bir bob alohida OpenAI so'rovi orqali yaratiladi (7 ta so'rov):
-  - KIRISH (1200+ so'z, 3-4 bet) - 3,000 tokens
-  - I BOB - Nazariy asoslar (2500+ so'z, 8-10 bet) - 5,000 tokens
-  - II BOB - Amaliy tahlil (3000+ so'z, 10-12 bet) - 6,000 tokens
-  - III BOB - Takliflar va yechimlar (2500+ so'z, 8-10 bet) - 5,000 tokens
-  - XULOSA (1200+ so'z, 3-4 bet) - 3,000 tokens
-  - ADABIYOTLAR (400+ so'z, kamida 25 manba) - 2,000 tokens
-  - ILOVALAR (300+ so'z) - 2,000 tokens
-- **Jami: 11,000-14,000 so'z (~35-40 bet)**
-- **Token sarfi: ~26,000 tokens** (quota xatoligini oldini olish uchun optimallashtirilgan)
-- Har bir bo'lim uchun uzunlik validatsiyasi mavjud
+  - KIRISH (1500+ so'z, 3-4 bet) - 4,000 tokens
+  - I BOB - Nazariy asoslar (3000+ so'z, 8-10 bet) - 6,000 tokens
+  - II BOB - Amaliy tahlil (3500+ so'z, 10-12 bet) - 7,000 tokens
+  - III BOB - Takliflar va yechimlar (3000+ so'z, 8-10 bet) - 6,000 tokens
+  - XULOSA (1500+ so'z, 3-4 bet) - 4,000 tokens
+  - ADABIYOTLAR (500+ so'z, kamida 25 manba) - 3,000 tokens
+  - ILOVALAR (500+ so'z) - 3,000 tokens
+- **Jami: 13,000-15,000 so'z (~40-45 bet)**
+- **Token sarfi: ~33,000 tokens** (GPT-4o uchun optimallashtirilgan)
+- Har bir bo'lim uchun batafsil prompt va uzunlik validatsiyasi mavjud
+- System prompt: "JUDA BATAFSIL, UZUN va chuqur akademik matn yaratish"
 
 ### 3. Professional DOCX formatlash (O'zbekiston standartlari)
 - **1. Titul varaq** (O'quv yurti, talaba ma'lumotlari, fan, mavzu, kurs)
@@ -70,11 +71,12 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 ### Texnologiyalar
 
 - **Aiogram 3.x**: Telegram Bot API uchun Python framework
-- **OpenAI API (GPT-4)**: Kurs ishi va maqola yaratish
+- **OpenAI API (GPT-4o)**: Kurs ishi va maqola yaratish
   - Multi-section generation: 7 alohida so'rov (KIRISH, 3 BOB, XULOSA, ADABIYOTLAR, ILOVALAR)
-  - Token sarfi optimizatsiyasi: ~26,000 tokens (quota xatoligini oldini olish)
-  - Word count validation: 11,000-14,000 so'z (35-40 bet)
-  - Har bir bo'lim uchun individual max_tokens sozlamalari
+  - Token sarfi: ~33,000 tokens (GPT-4o uchun optimallashtirilgan)
+  - Word count validation: 13,000-15,000 so'z (40-45 bet)
+  - Har bir bo'lim uchun batafsil prompt va individual max_tokens sozlamalari
+  - System prompt: JUDA BATAFSIL va UZUN matn yaratish uchun sozlangan
 - **SQLite**: Ma'lumotlar bazasi
 - **python-docx**: Professional DOCX fayllarni yaratish
   - Custom margins, fonts, spacing
