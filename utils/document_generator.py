@@ -104,12 +104,12 @@ def create_word_document(sections, user_data, file_path):
             subsections = section_data.get('subsections', [])
             for subsection in subsections:
                 subsection_title = f"{subsection['number']}. {subsection['title']}"
-                p = doc.add_paragraph()
-                run = p.add_run(subsection_title)
-                run.font.bold = True
-                run.font.size = Pt(14)
-                run.font.name = 'Times New Roman'
-                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                p = doc.add_paragraph(subsection_title)
+                p.runs[0].font.bold = True
+                p.runs[0].font.size = Pt(14)
+                p.runs[0].font.name = 'Times New Roman'
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p.paragraph_format.space_before = Pt(12)
                 
                 subsection_content = subsection['content']
                 p = doc.add_paragraph(subsection_content)
