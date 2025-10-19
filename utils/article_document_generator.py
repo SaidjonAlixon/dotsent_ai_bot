@@ -182,8 +182,6 @@ def create_article_document(sections, user_data, file_path):
                     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 
                 doc.add_paragraph()
-            
-            doc.add_page_break()
         
         elif section_type == 'kirish':
             p = doc.add_paragraph('KIRISH')
