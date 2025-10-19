@@ -80,6 +80,13 @@ async def process_course_work_background(bot, telegram_id, user_data_for_ai, pri
         
         db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
         
+        # Faylni serverdan o'chirish (joy tejash uchun)
+        try:
+            os.remove(docx_path)
+            logger.info(f"DOCX fayl o'chirildi: {docx_path}")
+        except Exception as e:
+            logger.error(f"Faylni o'chirishda xatolik: {e}")
+        
         logger.info(f"Kurs ishi tayyor: {telegram_id}")
         
     except Exception as e:
@@ -146,6 +153,13 @@ async def process_article_background(bot, telegram_id, user_data_for_ai, price, 
         )
         
         db.add_order(telegram_id, "maqola", topic, price, file_link)
+        
+        # Faylni serverdan o'chirish (joy tejash uchun)
+        try:
+            os.remove(filepath)
+            logger.info(f"DOCX fayl o'chirildi: {filepath}")
+        except Exception as e:
+            logger.error(f"Faylni o'chirishda xatolik: {e}")
         
         logger.info(f"Maqola tayyor: {telegram_id}")
         
