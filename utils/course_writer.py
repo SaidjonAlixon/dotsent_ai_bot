@@ -108,7 +108,7 @@ async def generate_course_work(user_data):
         f"3.1-band muammolarni yechish bo'yicha takliflar bo'lishi kerak. "
         f"Aniqlangan muammolarni bartaraf etish uchun aniq, amaliy takliflar bering. "
         f"Matn ilmiy uslubda, uzluksiz, bir oqimda yozilsin. Paragraflar orasiga enter tashlamang.",
-        max_words=1600)
+        max_words=2000)
 
     chapter3_section2 = await generate_section_with_ai(
         f"Kurs ishi III BOB ning 3.2-bandini yozing (4-5 bet, taxminan 1400-1600 so'z). "
@@ -116,7 +116,7 @@ async def generate_course_work(user_data):
         f"3.2-band takomillashtirish choralari va istiqbollari bo'lishi kerak. "
         f"Takliflarni amalga oshirish mexanizmlari, kutilayotgan natijalar va istiqbollarni batafsil yoritib bering. "
         f"Matn ilmiy uslubda, uzluksiz, bir oqimda yozilsin. Paragraflar orasiga enter tashlamang.",
-        max_words=1600)
+        max_words=2000)
 
     sections.append({
         'type':
@@ -200,59 +200,7 @@ Toshkent – 2025
 
 
 def generate_plan(subject, topic):
-    try:
-        prompt = f"""Fan: {subject}
-Mavzu: {topic}
-
-Yuqoridagi mavzu bo'yicha kurs ishi uchun REJA tuzing. 
-
-Reja quyidagi formatda bo'lishi kerak:
-
-KIRISH
-
-I BOB. [Mavzuga mos 1-bob sarlavhasi - NAZARIY ASOSLAR VA ADABIYOTLAR TAHLILI]
-1.1. [Mavzuga mos 1.1-band sarlavhasi]
-1.2. [Mavzuga mos 1.2-band sarlavhasi]
-
-II BOB. [Mavzuga mos 2-bob sarlavhasi - AMALIY TAHLIL VA TADQIQOT]
-2.1. [Mavzuga mos 2.1-band sarlavhasi]
-2.2. [Mavzuga mos 2.2-band sarlavhasi]
-
-III BOB. [Mavzuga mos 3-bob sarlavhasi - TAKOMILLASHTIRISH TAKLIFLARI VA YECHIMLAR]
-3.1. [Mavzuga mos 3.1-band sarlavhasi]
-3.2. [Mavzuga tos 3.2-band sarlavhasi]
-
-XULOSA
-
-FOYDALANILGAN ADABIYOTLAR RO'YXATI
-
-ILOVALAR
-
-MUHIM: 
-- Faqat rejani yozing, boshqa hech narsa yozilmasin
-- Har bir bob va band sarlavhasi mavzuga to'g'ridan-to'g'ri bog'liq bo'lishi kerak
-- Sarlavhalar aniq, qisqa va professional bo'lishi kerak
-- Faqat yuqoridagi formatda yozing"""
-
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Siz kurs ishi uchun professional reja tuzuvchisiz. Faqat reja matnini qaytaring, boshqa hech narsa yozmang."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.7
-        )
-        
-        plan = response.choices[0].message.content.strip()
-        return plan
-        
-    except Exception as e:
-        print(f"Reja yaratishda xatolik: {e}")
-        return """KIRISH
+    return """KIRISH
 
 I BOB. NAZARIY ASOSLAR VA ADABIYOTLAR TAHLILI
 1.1. Asosiy tushunchalar va nazariy asoslar
