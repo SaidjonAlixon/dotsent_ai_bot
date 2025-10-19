@@ -86,15 +86,14 @@ async def generate_section(section_prompt: str, section_name: str, min_words: in
                 section_prompt += f"\n\nMUHIM: Oldingi urinish juda qisqa chiqdi. Iltimos, JUDA BATAFSIL va UZUN yozing - KAMIDA {min_words} SO'Z!"
             
             response = openai.chat.completions.create(
-                model="gpt-5-nano",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "Siz professional akademik yozuvchi siz. JUDA BATAFSIL, UZUN va chuqur akademik matn yarating. Har bir fikrni to'liq ochib bering. Ko'proq so'z ishlatishingiz kerak - kamida kerakli so'zlar sonidan ko'p yozing. Har bir paragraf batafsil va keng yoritilgan bo'lishi shart. QISQA JAVOB BERMANG!"},
                     {"role": "user", "content": section_prompt}
                 ],
                 temperature=0.7,
                 max_tokens=max_tokens,
-                timeout=180.0,
-                reasoning_effort="high"
+                timeout=180.0
             )
             
             content = response.choices[0].message.content or ""
@@ -471,15 +470,14 @@ async def generate_maqola(topic: str) -> str:
         prompt = MAQOLA_PROMPT.format(topic=topic)
         
         response = openai.chat.completions.create(
-            model="gpt-5-nano",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "Siz professional maqola muallifi siz."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
             max_tokens=4000,
-            timeout=120.0,
-            reasoning_effort="high"
+            timeout=120.0
         )
         
         content = response.choices[0].message.content or ""
