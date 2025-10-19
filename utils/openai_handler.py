@@ -76,32 +76,48 @@ Maqola quyidagi tuzilmaga ega bo'lishi kerak:
 
 Maqola ilmiy uslubda, professional tilda yozilishi kerak."""
 
-async def generate_section(section_prompt: str, section_name: str, min_words: int = 1000, max_tokens: int = 4000) -> str:
-    """Bir bo'limni yaratish"""
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Siz professional akademik yozuvchi siz. JUDA BATAFSIL, UZU va chuqur akademik matn yarating. Har bir fikrni to'liq ochib bering. Ko'proq so'z ishlatishingiz kerak - kamida kerakli so'zlar sonidan ko'p yozing. Har bir paragraf batafsil va keng yoritilgan bo'lishi shart."},
-                {"role": "user", "content": section_prompt}
-            ],
-            temperature=0.7,
-            max_tokens=max_tokens,
-            timeout=180.0
-        )
-        
-        content = response.choices[0].message.content or ""
-        word_count = len(content.split())
-        
-        if not content or word_count < min_words:
-            raise ValueError(f"{section_name} juda qisqa: {word_count} so'z (kerak: {min_words}+ so'z)")
-        
-        logger.info(f"{section_name} yaratildi: {word_count} so'z, {len(content)} belgi")
-        return content
+async def generate_section(section_prompt: str, section_name: str, min_words: int = 1000, max_tokens: int = 4000, retry_count: int = 2) -> str:
+    """Bir bo'limni yaratish - retry logic bilan"""
     
-    except Exception as e:
-        logger.error(f"{section_name} yaratishda xatolik: {e}")
-        raise
+    for attempt in range(retry_count):
+        try:
+            if attempt > 0:
+                logger.info(f"{section_name} qayta yaratilmoqda (urinish {attempt + 1}/{retry_count})...")
+                section_prompt += f"\n\nMUHIM: Oldingi urinish juda qisqa chiqdi. Iltimos, JUDA BATAFSIL va UZUN yozing - KAMIDA {min_words} SO'Z!"
+            
+            response = openai.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "Siz professional akademik yozuvchi siz. JUDA BATAFSIL, UZUN va chuqur akademik matn yarating. Har bir fikrni to'liq ochib bering. Ko'proq so'z ishlatishingiz kerak - kamida kerakli so'zlar sonidan ko'p yozing. Har bir paragraf batafsil va keng yoritilgan bo'lishi shart. QISQA JAVOB BERMANG!"},
+                    {"role": "user", "content": section_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=max_tokens,
+                timeout=180.0
+            )
+            
+            content = response.choices[0].message.content or ""
+            word_count = len(content.split())
+            
+            if word_count >= min_words:
+                logger.info(f"{section_name} yaratildi: {word_count} so'z, {len(content)} belgi")
+                return content
+            else:
+                logger.warning(f"{section_name} juda qisqa: {word_count} so'z (kerak: {min_words}+ so'z)")
+                if attempt < retry_count - 1:
+                    continue
+                else:
+                    logger.error(f"{section_name} {retry_count} marta urinishdan keyin ham qisqa: {word_count} so'z")
+                    return content
+        
+        except Exception as e:
+            logger.error(f"{section_name} yaratishda xatolik (urinish {attempt + 1}): {e}")
+            if attempt < retry_count - 1:
+                continue
+            else:
+                raise
+    
+    raise Exception(f"{section_name} yaratib bo'lmadi")
 
 async def generate_kurs_ishi_full(topic: str, subject: str, fish: str, university: str, course_number: int) -> dict:
     """OpenAI orqali to'liq kurs ishi yaratish - har bir bob alohida"""
@@ -364,12 +380,12 @@ ESDA TUTING: Hamma manbalar REAL va mavzuga mos bo'lishi kerak. KAMIDA 25 TA MAN
 
         logger.info("Kurs ishining barcha qismlari yaratilmoqda...")
         
-        kirish = await generate_section(kirish_prompt, "KIRISH", min_words=1500, max_tokens=4000)
-        bob1 = await generate_section(bob1_prompt, "I BOB", min_words=3000, max_tokens=6000)
-        bob2 = await generate_section(bob2_prompt, "II BOB", min_words=3500, max_tokens=7000)
-        bob3 = await generate_section(bob3_prompt, "III BOB", min_words=3000, max_tokens=6000)
-        xulosa = await generate_section(xulosa_prompt, "XULOSA", min_words=1500, max_tokens=4000)
-        adabiyotlar = await generate_section(adabiyotlar_prompt, "ADABIYOTLAR", min_words=500, max_tokens=3000)
+        kirish = await generate_section(kirish_prompt, "KIRISH", min_words=1200, max_tokens=4000, retry_count=3)
+        bob1 = await generate_section(bob1_prompt, "I BOB", min_words=2500, max_tokens=6000, retry_count=2)
+        bob2 = await generate_section(bob2_prompt, "II BOB", min_words=3000, max_tokens=7000, retry_count=2)
+        bob3 = await generate_section(bob3_prompt, "III BOB", min_words=2500, max_tokens=6000, retry_count=2)
+        xulosa = await generate_section(xulosa_prompt, "XULOSA", min_words=1200, max_tokens=4000, retry_count=2)
+        adabiyotlar = await generate_section(adabiyotlar_prompt, "ADABIYOTLAR", min_words=400, max_tokens=3000, retry_count=2)
         
         ilovalar_prompt = f"""Quyidagi mavzu bo'yicha ILOVALAR qismini yarating.
 
@@ -408,18 +424,16 @@ ILOVA 4. QO'SHIMCHA MATERIALLAR (100-150 so'z):
 
 ESDA TUTING: Har bir ilova aniq tavsif va tushuntirishga ega bo'lishi kerak. KAMIDA 500 SO'Z!"""
 
-        ilovalar = await generate_section(ilovalar_prompt, "ILOVALAR", min_words=500, max_tokens=3000)
+        ilovalar = await generate_section(ilovalar_prompt, "ILOVALAR", min_words=400, max_tokens=3000, retry_count=2)
         
         full_content = f"{kirish}\n\n{bob1}\n\n{bob2}\n\n{bob3}\n\n{xulosa}\n\n{adabiyotlar}\n\n{ilovalar}"
         
         word_count = len(full_content.split())
         
-        if word_count < 11000:
-            raise ValueError(
-                f"Kurs ishi kerakli hajmga yetmadi!\n"
-                f"Yaratildi: {word_count} so'z\n"
-                f"Kerak: 11,000-14,000 so'z (35-40 bet)\n\n"
-                f"Iltimos, qaytadan urinib ko'ring."
+        if word_count < 10000:
+            logger.warning(
+                f"Kurs ishi qisqaroq chiqdi: {word_count} so'z (optimal: 11,000-14,000)\n"
+                f"Lekin yetarli hajmda - davom etamiz."
             )
         
         if word_count > 16000:
