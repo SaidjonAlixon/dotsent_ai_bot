@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -216,12 +216,13 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
         
         db.update_balance(telegram_id, -price)
         
-        with open(docx_path, 'rb') as doc_file:
-            if config.KURS_ISHLARI_CHANNEL_ID:
-                channel_message = await bot.send_document(
-                    chat_id=config.KURS_ISHLARI_CHANNEL_ID,
-                    document=doc_file,
-                    caption=f"""🧾 Kurs ishi tayyorlandi
+        document_file = FSInputFile(docx_path)
+        
+        if config.KURS_ISHLARI_CHANNEL_ID:
+            channel_message = await bot.send_document(
+                chat_id=config.KURS_ISHLARI_CHANNEL_ID,
+                document=document_file,
+                caption=f"""🧾 Kurs ishi tayyorlandi
 
 👤 F.I.Sh: {data['fish']}
 🆔 ID: {telegram_id}
@@ -231,16 +232,16 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
 🎓 Kurs: {course_number}
 💰 Narx: {price:,} so'm
 🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
-                )
-                file_link = f"https://t.me/c/{str(config.KURS_ISHLARI_CHANNEL_ID)[4:]}/{channel_message.message_id}"
-            else:
-                file_link = docx_path
-            
-            doc_file.seek(0)
-            await message.answer_document(
-                document=doc_file,
-                caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {data['topic']}\n💰 To'langan: {price:,} so'm"
             )
+            file_link = f"https://t.me/c/{str(config.KURS_ISHLARI_CHANNEL_ID)[4:]}/{channel_message.message_id}"
+        else:
+            file_link = docx_path
+        
+        document_file_user = FSInputFile(docx_path)
+        await message.answer_document(
+            document=document_file_user,
+            caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {data['topic']}\n💰 To'langan: {price:,} so'm"
+        )
         
         db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
         
@@ -334,12 +335,13 @@ async def process_maqola_topic(message: Message, state: FSMContext, bot):
         
         db.update_balance(telegram_id, -price)
         
-        with open(filepath, 'rb') as doc_file:
-            if config.MAQOLALAR_CHANNEL_ID:
-                channel_message = await bot.send_document(
-                    chat_id=config.MAQOLALAR_CHANNEL_ID,
-                    document=doc_file,
-                    caption=f"""📰 Maqola tayyorlandi
+        document_file = FSInputFile(filepath)
+        
+        if config.MAQOLALAR_CHANNEL_ID:
+            channel_message = await bot.send_document(
+                chat_id=config.MAQOLALAR_CHANNEL_ID,
+                document=document_file,
+                caption=f"""📰 Maqola tayyorlandi
 
 👤 Ismi: {user['full_name']}
 🆔 ID: {telegram_id}
@@ -347,16 +349,16 @@ async def process_maqola_topic(message: Message, state: FSMContext, bot):
 📝 Mavzu: {topic}
 💰 Narx: {price:,} so'm
 🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
-                )
-                file_link = f"https://t.me/c/{str(config.MAQOLALAR_CHANNEL_ID)[4:]}/{channel_message.message_id}"
-            else:
-                file_link = filepath
-            
-            doc_file.seek(0)
-            await message.answer_document(
-                document=doc_file,
-                caption=f"✅ Maqolangiz tayyor!\n\n📝 Mavzu: {topic}\n💰 To'langan: {price:,} so'm"
             )
+            file_link = f"https://t.me/c/{str(config.MAQOLALAR_CHANNEL_ID)[4:]}/{channel_message.message_id}"
+        else:
+            file_link = filepath
+        
+        document_file_user = FSInputFile(filepath)
+        await message.answer_document(
+            document=document_file_user,
+            caption=f"✅ Maqolangiz tayyor!\n\n📝 Mavzu: {topic}\n💰 To'langan: {price:,} so'm"
+        )
         
         db.add_order(telegram_id, "maqola", topic, price, file_link)
         
