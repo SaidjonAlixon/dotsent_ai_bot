@@ -1,5 +1,16 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
+def get_subscription_keyboard(channel_1: str, channel_2: str):
+    """Majburiy obuna klaviaturasi"""
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📢 1-Kanalga obuna bo'lish", url=f"https://t.me/{channel_1.replace('@', '')}")],
+            [InlineKeyboardButton(text="📢 2-Kanalga obuna bo'lish", url=f"https://t.me/{channel_2.replace('@', '')}")],
+            [InlineKeyboardButton(text="✅ Obuna bo'ldim", callback_data="check_subscription")]
+        ]
+    )
+    return keyboard
+
 def get_main_menu():
     """Asosiy menyu"""
     keyboard = ReplyKeyboardMarkup(
