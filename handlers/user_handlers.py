@@ -314,14 +314,13 @@ async def kurs_ishi_handler(message: Message, state: FSMContext):
         "🧾 **Kurs ishi yozish**\n\n"
         "📊 **Xizmat haqida:**\n"
         "• Professional akademik kurs ishi\n"
-        "• 40-45 sahifa (16,000-17,000 so'z)\n"
-        "• GPT-4o Mini yordamida yaratiladi\n"
+        "• Barcha oliygohlar talablariga mos\n"
         "• O'zbekiston standartlariga mos\n"
-        "• Titul, Reja, Mundarija, Ilovalar\n"
+        "• Titul, Mundareja, Mundarija, Ilovalar\n"
         "• Times New Roman 14pt, 1.5 interval\n\n"
         f"💰 **Narx:** {kurs_ishi_price:,} so'm\n\n"
-        "⏱ **Tayyor bo'lish muddati:** 15-30 daqiqa\n\n"
-        "📄 Namunani ko'rish uchun tugmani bosing."
+        "⏱ **Tayyor bo'lish muddati:** 5-10 daqiqa\n\n"
+        "📄 Namunani ko'rish uchun tugmani bosing. Ma'qul bo'lsa ✅Roziman tugmasini bosing va kurs ishingiz tayyorlanish boshlanadi!"
     )
     
     await message.answer(
@@ -472,15 +471,14 @@ async def maqola_handler(message: Message, state: FSMContext):
     info_text = (
         "📰 **Ilmiy maqola yozish**\n\n"
         "📊 **Xizmat haqida:**\n"
-        "• Professional ilmiy maqola\n"
+        "• Professional ilmiy maqola barcha talablarga mos\n"
         "• 7-10 sahifa\n"
-        "• GPT-4o Mini yordamida yaratiladi\n"
         "• Annotatsiya (3 tilda: O'zbek, Ingliz, Rus)\n"
         "• Kalit so'zlar, Adabiyotlar (APA format)\n"
         "• Times New Roman 14pt, 1.5 interval\n\n"
         f"💰 **Narx:** {maqola_price:,} so'm\n\n"
-        "⏱ **Tayyor bo'lish muddati:** 10-20 daqiqa\n\n"
-        "📄 Namunani ko'rish uchun tugmani bosing."
+        "⏱ **Tayyor bo'lish muddati:** 5-10 daqiqa\n\n"
+        "📄 Namunani ko'rish uchun tugmani bosing. Ma'qul bo'lsa ✅Roziman tugmasini bosing va maqolangizni yaratish boshlanadi!"
     )
     
     await message.answer(
