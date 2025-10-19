@@ -50,7 +50,7 @@ def create_article_document(sections, user_data, file_path):
         section_type = section_data['type']
         
         if section_type == 'title':
-            # Sarlavha va mualliflar
+            # Sarlavha va mualliflar (1-sahifa)
             title_data = section_data['content']
             
             # Maqola sarlavhasi
@@ -60,8 +60,7 @@ def create_article_document(sections, user_data, file_path):
             p.runs[0].font.size = Pt(14)
             p.runs[0].font.name = 'Times New Roman'
             p.paragraph_format.first_line_indent = Cm(0)
-            
-            doc.add_paragraph()
+            p.paragraph_format.space_after = Pt(12)
             
             # Mualliflar
             if title_data.get('authors'):
@@ -69,16 +68,18 @@ def create_article_document(sections, user_data, file_path):
                     p = doc.add_paragraph(author.get('name', ''))
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     p.runs[0].font.size = Pt(14)
+                    p.runs[0].font.name = 'Times New Roman'
                     p.paragraph_format.first_line_indent = Cm(0)
+                    p.paragraph_format.space_after = Pt(6)
                     
                     if author.get('affiliation'):
                         p = doc.add_paragraph(author['affiliation'])
                         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p.runs[0].font.size = Pt(12)
+                        p.runs[0].font.size = Pt(14)
+                        p.runs[0].font.name = 'Times New Roman'
                         p.runs[0].font.italic = True
                         p.paragraph_format.first_line_indent = Cm(0)
-                    
-                    doc.add_paragraph()
+                        p.paragraph_format.space_after = Pt(12)
             
             doc.add_page_break()
         
@@ -92,11 +93,29 @@ def create_article_document(sections, user_data, file_path):
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p.runs[0].font.bold = True
                 p.runs[0].font.size = Pt(14)
+                p.runs[0].font.name = 'Times New Roman'
                 p.paragraph_format.first_line_indent = Cm(0)
+                p.paragraph_format.space_after = Pt(6)
                 
                 content = annotations['uz']
-                p = doc.add_paragraph(content)
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                # Kalit so'zlarni ajratish
+                if 'Kalit so\'zlar:' in content:
+                    parts = content.split('Kalit so\'zlar:')
+                    # Annotatsiya matni
+                    p = doc.add_paragraph(parts[0].strip())
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                    p.paragraph_format.space_after = Pt(6)
+                    # Kalit so'zlar
+                    p = doc.add_paragraph()
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                    p.paragraph_format.first_line_indent = Cm(1.25)
+                    run = p.add_run('Kalit so\'zlar: ')
+                    run.font.bold = True
+                    run.font.size = Pt(14)
+                    p.add_run(parts[1].strip())
+                else:
+                    p = doc.add_paragraph(content)
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 
                 doc.add_paragraph()
             
@@ -106,11 +125,29 @@ def create_article_document(sections, user_data, file_path):
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p.runs[0].font.bold = True
                 p.runs[0].font.size = Pt(14)
+                p.runs[0].font.name = 'Times New Roman'
                 p.paragraph_format.first_line_indent = Cm(0)
+                p.paragraph_format.space_after = Pt(6)
                 
                 content = annotations['en']
-                p = doc.add_paragraph(content)
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                # Keywords ajratish
+                if 'Keywords:' in content:
+                    parts = content.split('Keywords:')
+                    # Abstract matni
+                    p = doc.add_paragraph(parts[0].strip())
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                    p.paragraph_format.space_after = Pt(6)
+                    # Keywords
+                    p = doc.add_paragraph()
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                    p.paragraph_format.first_line_indent = Cm(1.25)
+                    run = p.add_run('Keywords: ')
+                    run.font.bold = True
+                    run.font.size = Pt(14)
+                    p.add_run(parts[1].strip())
+                else:
+                    p = doc.add_paragraph(content)
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 
                 doc.add_paragraph()
             
@@ -120,11 +157,29 @@ def create_article_document(sections, user_data, file_path):
                 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p.runs[0].font.bold = True
                 p.runs[0].font.size = Pt(14)
+                p.runs[0].font.name = 'Times New Roman'
                 p.paragraph_format.first_line_indent = Cm(0)
+                p.paragraph_format.space_after = Pt(6)
                 
                 content = annotations['ru']
-                p = doc.add_paragraph(content)
-                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                # Ключевые слова ajratish
+                if 'Ключевые слова:' in content:
+                    parts = content.split('Ключевые слова:')
+                    # Аннотация matni
+                    p = doc.add_paragraph(parts[0].strip())
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                    p.paragraph_format.space_after = Pt(6)
+                    # Ключевые слова
+                    p = doc.add_paragraph()
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                    p.paragraph_format.first_line_indent = Cm(1.25)
+                    run = p.add_run('Ключевые слова: ')
+                    run.font.bold = True
+                    run.font.size = Pt(14)
+                    p.add_run(parts[1].strip())
+                else:
+                    p = doc.add_paragraph(content)
+                    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                 
                 doc.add_paragraph()
             
@@ -135,10 +190,14 @@ def create_article_document(sections, user_data, file_path):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.runs[0].font.bold = True
             p.runs[0].font.size = Pt(14)
+            p.runs[0].font.name = 'Times New Roman'
             p.paragraph_format.first_line_indent = Cm(0)
+            p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            p = doc.add_paragraph(content)
+            # Matnni uzluksiz yozish
+            clean_text = ' '.join(content.split())
+            p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
             doc.add_page_break()
@@ -148,10 +207,14 @@ def create_article_document(sections, user_data, file_path):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.runs[0].font.bold = True
             p.runs[0].font.size = Pt(14)
+            p.runs[0].font.name = 'Times New Roman'
             p.paragraph_format.first_line_indent = Cm(0)
+            p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            p = doc.add_paragraph(content)
+            # Matnni uzluksiz yozish
+            clean_text = ' '.join(content.split())
+            p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
             doc.add_page_break()
@@ -161,10 +224,14 @@ def create_article_document(sections, user_data, file_path):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.runs[0].font.bold = True
             p.runs[0].font.size = Pt(14)
+            p.runs[0].font.name = 'Times New Roman'
             p.paragraph_format.first_line_indent = Cm(0)
+            p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            p = doc.add_paragraph(content)
+            # Matnni uzluksiz yozish
+            clean_text = ' '.join(content.split())
+            p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
             doc.add_page_break()
@@ -174,10 +241,14 @@ def create_article_document(sections, user_data, file_path):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.runs[0].font.bold = True
             p.runs[0].font.size = Pt(14)
+            p.runs[0].font.name = 'Times New Roman'
             p.paragraph_format.first_line_indent = Cm(0)
+            p.paragraph_format.space_after = Pt(6)
             
             content = section_data['content']
-            p = doc.add_paragraph(content)
+            # Matnni uzluksiz yozish
+            clean_text = ' '.join(content.split())
+            p = doc.add_paragraph(clean_text)
             p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             
             doc.add_page_break()
@@ -187,15 +258,18 @@ def create_article_document(sections, user_data, file_path):
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p.runs[0].font.bold = True
             p.runs[0].font.size = Pt(14)
+            p.runs[0].font.name = 'Times New Roman'
             p.paragraph_format.first_line_indent = Cm(0)
+            p.paragraph_format.space_after = Pt(12)
             
             content = section_data['content']
             lines = content.split('\n')
             for line in lines:
                 if line.strip():
-                    p = doc.add_paragraph(line)
+                    p = doc.add_paragraph(line.strip())
                     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     p.paragraph_format.first_line_indent = Cm(0)
+                    p.paragraph_format.space_after = Pt(6)
     
     doc.save(file_path)
     return file_path

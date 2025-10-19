@@ -33,7 +33,8 @@ async def generate_article(user_data):
         f"2. Muammoning qo'yilishi\n"
         f"3. Tadqiqot maqsadi\n"
         f"4. Ilmiy yangiligi\n\n"
-        f"Matn ilmiy uslubda, uzluksiz yozilsin.",
+        f"MUHIM: Matn uzluksiz, bitta oqimda yozilsin. Enter qo'ymang.\n"
+        f"Faqat matnni yozing, 'KIRISH' deb sarlavha qo'ymang.",
         max_words=1000
     )
     sections.append({'type': 'kirish', 'content': intro_content})
@@ -47,7 +48,8 @@ async def generate_article(user_data):
         f"1. Tadqiqot metodologiyasi\n"
         f"2. Ishlatilgan usullar\n"
         f"3. Ma'lumotlar to'plash va tahlil qilish usullari\n\n"
-        f"Matn ilmiy uslubda yozilsin.",
+        f"MUHIM: Matn uzluksiz, bitta oqimda yozilsin. Enter qo'ymang.\n"
+        f"Faqat matnni yozing, sarlavha qo'ymang.",
         max_words=800
     )
     sections.append({'type': 'methods', 'content': methods_content})
@@ -62,7 +64,8 @@ async def generate_article(user_data):
         f"2. Olingan ma'lumotlar tahlili\n"
         f"3. Natijalarni muhokama qilish\n"
         f"4. Boshqa tadqiqotlar bilan taqqoslash\n\n"
-        f"Matn ilmiy uslubda, batafsil yozilsin.",
+        f"MUHIM: Matn uzluksiz, bitta oqimda yozilsin. Enter qo'ymang.\n"
+        f"Faqat matnni yozing, sarlavha qo'ymang.",
         max_words=1500
     )
     sections.append({'type': 'results', 'content': results_content})
@@ -76,7 +79,8 @@ async def generate_article(user_data):
         f"1. Asosiy xulosalar\n"
         f"2. Amaliy tavsiyalar\n"
         f"3. Keyingi tadqiqotlar uchun yo'nalishlar\n\n"
-        f"Matn qisqa va aniq bo'lsin.",
+        f"MUHIM: Matn uzluksiz, bitta oqimda yozilsin. Enter qo'ymang.\n"
+        f"Faqat matnni yozing, sarlavha qo'ymang.",
         max_words=600
     )
     sections.append({'type': 'conclusion', 'content': conclusion_content})
@@ -97,13 +101,14 @@ async def generate_annotations(topic, subject):
         f"Ilmiy maqola uchun O'ZBEK TILIDA annotatsiya yozing.\n"
         f"Mavzu: {topic}\n"
         f"Fan: {subject}\n\n"
-        f"Annotatsiya 80-100 so'zdan iborat bo'lishi kerak.\n"
+        f"Annotatsiya 40-50 so'zdan iborat bo'lishi kerak.\n"
         f"Kalit so'zlar: 5-8 ta (vergul bilan ajratilgan)\n\n"
+        f"MUHIM: Faqat annotatsiya matnini yozing, 'ANNOTATSIYA' deb sarlavha qo'ymang.\n"
+        f"Matn uzluksiz, bitta paragrafda yozilsin.\n\n"
         f"Format:\n"
-        f"ANNOTATSIYA\n"
-        f"[Annotatsiya matni]\n"
+        f"[Annotatsiya matni - 40-50 so'z]\n"
         f"Kalit so'zlar: [so'z1, so'z2, so'z3...]",
-        max_words=150
+        max_words=80
     )
     annotations['uz'] = uz_annotation
     
@@ -112,13 +117,14 @@ async def generate_annotations(topic, subject):
         f"Write ABSTRACT in ENGLISH for scientific article.\n"
         f"Topic: {topic}\n"
         f"Subject: {subject}\n\n"
-        f"Abstract should be 80-100 words.\n"
+        f"Abstract should be 40-50 words.\n"
         f"Keywords: 5-8 words (comma separated)\n\n"
+        f"IMPORTANT: Write only abstract text, do NOT write 'ABSTRACT' as title.\n"
+        f"Text should be continuous, in one paragraph.\n\n"
         f"Format:\n"
-        f"ABSTRACT\n"
-        f"[Abstract text]\n"
+        f"[Abstract text - 40-50 words]\n"
         f"Keywords: [word1, word2, word3...]",
-        max_words=150
+        max_words=80
     )
     annotations['en'] = en_annotation
     
@@ -127,13 +133,14 @@ async def generate_annotations(topic, subject):
         f"Напишите АННОТАЦИЮ на РУССКОМ ЯЗЫКЕ для научной статьи.\n"
         f"Тема: {topic}\n"
         f"Предмет: {subject}\n\n"
-        f"Аннотация должна быть 80-100 слов.\n"
+        f"Аннотация должна быть 40-50 слов.\n"
         f"Ключевые слова: 5-8 слов (через запятую)\n\n"
+        f"ВАЖНО: Пишите только текст аннотации, НЕ пишите заголовок 'АННОТАЦИЯ'.\n"
+        f"Текст должен быть непрерывным, одним абзацем.\n\n"
         f"Формат:\n"
-        f"АННОТАЦИЯ\n"
-        f"[Текст аннотации]\n"
+        f"[Текст аннотации - 40-50 слов]\n"
         f"Ключевые слова: [слово1, слово2, слово3...]",
-        max_words=150
+        max_words=80
     )
     annotations['ru'] = ru_annotation
     

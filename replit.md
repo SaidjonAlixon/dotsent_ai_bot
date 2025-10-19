@@ -153,19 +153,21 @@ Bot endi professional ilmiy maqola ham yarata oladi!
 - 7-10 sahifa
 
 **Tarkib:**
-1. Sarlavha va mualliflar ma'lumoti
-2. Annotatsiya (3 tilda: O'zbek, Ingliz, Rus)
-3. Kalit so'zlar (5-8 ta, har bir tilda)
-4. Kirish (dolzarbligi)
-5. Tadqiqot uslublari
-6. Natijalar va muhokama
-7. Xulosa
-8. Foydalanilgan adabiyotlar (APA format)
+1. **1-sahifa**: Sarlavha (qalin, markazda) va mualliflar ma'lumoti (ismi, lavozimi, tashkiloti)
+2. **Annotatsiya** (3 tilda: O'zbek, Ingliz, Rus) - har biri 40-50 so'z
+3. **Kalit so'zlar** (5-8 ta, har bir tilda, qalin)
+4. **KIRISH** (qalin sarlavha, uzluksiz matn)
+5. **TADQIQOT USLUBLARI** (qalin sarlavha, uzluksiz matn)
+6. **NATIJALAR VA MUHOKAMA** (qalin sarlavha, uzluksiz matn)
+7. **XULOSA** (qalin sarlavha, uzluksiz matn)
+8. **FOYDALANILGAN ADABIYOTLAR** (APA format, 15-20 manba)
 
 **AI generation:**
 - Har bir bo'lim alohida GPT-4o Mini orqali yaratiladi
 - Professional ilmiy uslub
-- Mavzuga mos annotatsiyalar (3 tilda)
+- Mavzuga mos annotatsiyalar (3 tilda, 40-50 so'z)
+- Matnlar uzluksiz, bitta oqimda (enter qo'yilmaydi)
+- Barcha bo'lim sarlavhalari qalin (bold)
 - APA formatda adabiyotlar (15-20 ta manba)
 
 **Fayllar:**
