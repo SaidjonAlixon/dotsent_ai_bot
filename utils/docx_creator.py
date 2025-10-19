@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 def create_docx(content: str, filename: str, title: str = "") -> str:
     """DOCX fayl yaratish"""
     try:
+        if not content or len(content.strip()) < 10:
+            raise ValueError("Kontent bo'sh yoki juda qisqa")
+        
         os.makedirs("generated_files", exist_ok=True)
         
         doc = Document()
@@ -33,9 +36,12 @@ def create_docx(content: str, filename: str, title: str = "") -> str:
         filepath = f"generated_files/{filename}.docx"
         doc.save(filepath)
         
+        if not os.path.exists(filepath):
+            raise Exception("Fayl yaratilmadi")
+        
         logger.info(f"DOCX fayl yaratildi: {filepath}")
         return filepath
     
     except Exception as e:
         logger.error(f"DOCX yaratishda xatolik: {e}")
-        raise
+        raise Exception(f"DOCX fayl yaratishda xatolik: {str(e)}")

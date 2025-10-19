@@ -84,6 +84,11 @@ async def process_kurs_topic(message: Message, state: FSMContext, bot):
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
     
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        await state.clear()
+        return
+    
     price = int(db.get_setting("kurs_ishi_price", str(config.DEFAULT_KURS_ISH_PRICE)))
     
     if user["balance"] < price:
@@ -168,6 +173,11 @@ async def process_maqola_topic(message: Message, state: FSMContext, bot):
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
     
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        await state.clear()
+        return
+    
     price = int(db.get_setting("maqola_price", str(config.DEFAULT_MAQOLA_PRICE)))
     
     if user["balance"] < price:
@@ -237,6 +247,10 @@ async def balance_handler(message: Message):
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
     
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        return
+    
     await message.answer(
         f"💰 Sizning balansingiz: {user['balance']:,} so'm\n\n"
         f"Balansni to'ldirish uchun quyidagi tugmani bosing:",
@@ -285,8 +299,18 @@ async def process_payment_check(message: Message, state: FSMContext, bot):
     data = await state.get_data()
     amount = data.get("payment_amount")
     
+    if not amount:
+        await message.answer("❌ To'lov summasi topilmadi. Iltimos, qaytadan boshlang.", reply_markup=get_main_menu())
+        await state.clear()
+        return
+    
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
+    
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        await state.clear()
+        return
     
     photo = message.photo[-1]
     file_link = photo.file_id
@@ -324,6 +348,11 @@ async def referal_handler(message: Message):
     """Referal tizimi"""
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
+    
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        return
+    
     referal_count = db.get_referal_count(telegram_id)
     referal_bonus = int(db.get_setting("referal_bonus", str(config.DEFAULT_REFERAL_BONUS)))
     
@@ -344,6 +373,11 @@ async def profile_handler(message: Message):
     """Profil ko'rsatish"""
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
+    
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        return
+    
     referal_count = db.get_referal_count(telegram_id)
     
     await message.answer(
