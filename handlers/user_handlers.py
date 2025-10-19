@@ -800,18 +800,21 @@ async def back_to_menu_callback(callback: CallbackQuery):
         reply_markup=get_main_menu()
     )
 
-@router.callback_query(F.data.startswith("convert_to_pdf:"))
+@router.callback_query(F.data.startswith("pdf:"))
 async def convert_to_pdf_callback(callback: CallbackQuery):
     """DOCX faylni PDF ga o'tkazish"""
     await callback.answer("PDF yaratilmoqda, iltimos kuting...")
     
     try:
-        # Fayl yo'lini olish
-        file_path = callback.data.split("convert_to_pdf:", 1)[1]
+        # Filename olish
+        filename = callback.data.split("pdf:", 1)[1]
+        
+        # To'liq yo'lni yaratish
+        file_path = os.path.join('generated_files', filename)
         
         if not os.path.exists(file_path):
             await callback.message.answer(
-                "❌ Fayl topilmadi. Iltimos, qayta urinib ko'ring."
+                "❌ Fayl topilmadi yoki o'chirilgan. Iltimos, qayta kurs ishi/maqola yaratib, PDF qilishni darhol bosing."
             )
             return
         

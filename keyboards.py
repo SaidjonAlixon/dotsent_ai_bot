@@ -131,9 +131,12 @@ def get_support_buttons(support_url: str):
 
 def get_pdf_convert_button(file_path: str):
     """PDF ga o'tkazish tugmasi"""
+    import os
+    # Faqat filename (yo'lsiz) - callback_data 64 baytdan oshmasligi uchun
+    filename = os.path.basename(file_path)
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📄 Word faylni PDF qilish", callback_data=f"convert_to_pdf:{file_path}")]
+            [InlineKeyboardButton(text="📄 Word faylni PDF qilish", callback_data=f"pdf:{filename}")]
         ]
     )
     return keyboard
