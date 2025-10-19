@@ -31,6 +31,9 @@ class AdminStates(StatesGroup):
     waiting_for_promo_code = State()
     waiting_for_promo_discount = State()
     waiting_for_promo_usage_type = State()
+    # Ban/Unban state'lari
+    waiting_for_ban_user_id = State()
+    waiting_for_unban_user_id = State()
 
 def is_admin(user_id: int) -> bool:
     """Admin ekanligini tekshirish"""
@@ -677,3 +680,162 @@ async def back_to_user_menu(message: Message):
         return
     
     await message.answer("Foydalanuvchi menyusi:", reply_markup=get_main_menu())
+
+@router.message(F.text == "🚫 Foydalanuvchini cheklash")
+async def ban_user_start(message: Message, state: FSMContext):
+    """Foydalanuvchini cheklash - ID so'rash"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    await message.answer(
+        "🚫 **Foydalanuvchini cheklash**\n\n"
+        "Cheklamoqchi bo'lgan foydalanuvchining **Telegram ID** sini kiriting:\n\n"
+        "Masalan: `123456789`",
+        reply_markup=get_cancel_button(),
+        parse_mode="Markdown"
+    )
+    await state.set_state(AdminStates.waiting_for_ban_user_id)
+
+@router.message(AdminStates.waiting_for_ban_user_id)
+async def ban_user_process(message: Message, state: FSMContext):
+    """Foydalanuvchini cheklash"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_admin_menu())
+        return
+    
+    try:
+        user_id = int(message.text)
+        
+        # Foydalanuvchini tekshirish
+        user = db.get_user(user_id)
+        if not user:
+            await message.answer(
+                f"❌ ID: `{user_id}` li foydalanuvchi topilmadi.\n\n"
+                "Iltimos, to'g'ri ID kiriting.",
+                parse_mode="Markdown"
+            )
+            return
+        
+        # Admin o'zini cheklay olmaydi
+        if user_id == config.ADMIN_ID:
+            await message.answer(
+                "❌ Siz o'zingizni cheklay olmaysiz!",
+                reply_markup=get_admin_menu()
+            )
+            await state.clear()
+            return
+        
+        # Allaqachon cheklangan bo'lsa
+        if user.get('is_blocked') == 1:
+            await message.answer(
+                f"⚠️ Foydalanuvchi allaqachon cheklangan.\n\n"
+                f"👤 Ism: {user['full_name']}\n"
+                f"🆔 ID: {user_id}\n"
+                f"📱 Username: @{user['username'] or 'mavjud emas'}",
+                reply_markup=get_admin_menu(),
+                parse_mode="Markdown"
+            )
+            await state.clear()
+            return
+        
+        # Cheklash
+        if db.ban_user(user_id):
+            await message.answer(
+                f"✅ Foydalanuvchi muvaffaqiyatli cheklandi!\n\n"
+                f"👤 Ism: {user['full_name']}\n"
+                f"🆔 ID: {user_id}\n"
+                f"📱 Username: @{user['username'] or 'mavjud emas'}\n\n"
+                f"🚫 Bu foydalanuvchi endi botdan foydalana olmaydi.",
+                reply_markup=get_admin_menu(),
+                parse_mode="Markdown"
+            )
+        else:
+            await message.answer(
+                "❌ Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.",
+                reply_markup=get_admin_menu()
+            )
+        
+        await state.clear()
+    
+    except ValueError:
+        await message.answer(
+            "❌ Noto'g'ri format. Faqat raqam kiriting.\n\n"
+            "Masalan: `123456789`",
+            parse_mode="Markdown"
+        )
+
+@router.message(F.text == "✅ Cheklovni olib tashlash")
+async def unban_user_start(message: Message, state: FSMContext):
+    """Cheklovni olib tashlash - ID so'rash"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    await message.answer(
+        "✅ **Cheklovni olib tashlash**\n\n"
+        "Cheklovni olib tashlamoqchi bo'lgan foydalanuvchining **Telegram ID** sini kiriting:\n\n"
+        "Masalan: `123456789`",
+        reply_markup=get_cancel_button(),
+        parse_mode="Markdown"
+    )
+    await state.set_state(AdminStates.waiting_for_unban_user_id)
+
+@router.message(AdminStates.waiting_for_unban_user_id)
+async def unban_user_process(message: Message, state: FSMContext):
+    """Cheklovni olib tashlash"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_admin_menu())
+        return
+    
+    try:
+        user_id = int(message.text)
+        
+        # Foydalanuvchini tekshirish
+        user = db.get_user(user_id)
+        if not user:
+            await message.answer(
+                f"❌ ID: `{user_id}` li foydalanuvchi topilmadi.\n\n"
+                "Iltimos, to'g'ri ID kiriting.",
+                parse_mode="Markdown"
+            )
+            return
+        
+        # Allaqachon cheklanmagan bo'lsa
+        if user.get('is_blocked') == 0:
+            await message.answer(
+                f"⚠️ Foydalanuvchi cheklanmagan.\n\n"
+                f"👤 Ism: {user['full_name']}\n"
+                f"🆔 ID: {user_id}\n"
+                f"📱 Username: @{user['username'] or 'mavjud emas'}",
+                reply_markup=get_admin_menu(),
+                parse_mode="Markdown"
+            )
+            await state.clear()
+            return
+        
+        # Cheklovni olib tashlash
+        if db.unban_user(user_id):
+            await message.answer(
+                f"✅ Cheklov muvaffaqiyatli olib tashlandi!\n\n"
+                f"👤 Ism: {user['full_name']}\n"
+                f"🆔 ID: {user_id}\n"
+                f"📱 Username: @{user['username'] or 'mavjud emas'}\n\n"
+                f"🎉 Foydalanuvchi endi botdan foydalanishi mumkin.",
+                reply_markup=get_admin_menu(),
+                parse_mode="Markdown"
+            )
+        else:
+            await message.answer(
+                "❌ Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.",
+                reply_markup=get_admin_menu()
+            )
+        
+        await state.clear()
+    
+    except ValueError:
+        await message.answer(
+            "❌ Noto'g'ri format. Faqat raqam kiriting.\n\n"
+            "Masalan: `123456789`",
+            parse_mode="Markdown"
+        )

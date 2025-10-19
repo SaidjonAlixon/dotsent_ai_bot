@@ -61,6 +61,25 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
   - PDF fayldan keyin o'chiriladi (joy tejash uchun)
 - Xatolik bo'lsa, foydalanuvchiga qo'lda PDF qilish ko'rsatmasi beriladi
 
+### Foydalanuvchilarni cheklash tizimi (Ban/Unban) ✅
+- Admin panel → **"🚫 Foydalanuvchini cheklash"** va **"✅ Cheklovni olib tashlash"** tugmalari
+- **Cheklash jarayoni:**
+  1. Admin "🚫 Foydalanuvchini cheklash" tugmasini bosadi
+  2. Foydalanuvchi Telegram ID sini kiritadi
+  3. Tasdiqlanadi va foydalanuvchi cheklanadi
+- **Cheklangan foydalanuvchi:**
+  - Botdan **umuman foydalana olmaydi**
+  - `/start` bossa: "Sizning botdan foydalanish huquqingiz yo'q" xabari
+  - Qo'llab-quvvatlash guruhiga yo'naltirish tugmasi ko'rsatiladi
+- **Cheklovni olib tashlash:**
+  1. Admin "✅ Cheklovni olib tashlash" tugmasini bosadi
+  2. Foydalanuvchi ID sini kiritadi
+  3. Cheklov olib tashlanadi, foydalanuvchi qaytadan botdan foydalanishi mumkin
+- **Xususiyatlar:**
+  - Admin o'zini cheklay olmaydi
+  - Allaqachon cheklangan/cheklanmagan foydalanuvchi haqida ogohlantirish
+  - Database: `is_blocked` ustuni, `ban_user()`, `unban_user()`, `is_user_banned()` funksiyalari
+
 ## O'zgarishlar (2025-10-19)
 
 ### 3. Asenkron (Parallel) ishlov berish tizimi ✅

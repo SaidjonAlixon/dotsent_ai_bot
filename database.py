@@ -139,7 +139,8 @@ class Database:
                 "balance": row[4],
                 "referal_code": row[5],
                 "invited_by": row[6],
-                "register_date": row[7]
+                "register_date": row[7],
+                "is_blocked": row[8]
             }
         return None
     
@@ -420,3 +421,40 @@ class Database:
             "maqolalar": maqolalar,
             "total_orders": total_orders
         }
+    
+    def ban_user(self, telegram_id: int) -> bool:
+        """Foydalanuvchini cheklash"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("UPDATE users SET is_blocked = 1 WHERE telegram_id = ?", (telegram_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Ban user error: {e}")
+            return False
+    
+    def unban_user(self, telegram_id: int) -> bool:
+        """Foydalanuvchi cheklovini olib tashlash"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("UPDATE users SET is_blocked = 0 WHERE telegram_id = ?", (telegram_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Unban user error: {e}")
+            return False
+    
+    def is_user_banned(self, telegram_id: int) -> bool:
+        """Foydalanuvchi cheklangan yoki yo'qligini tekshirish"""
+        user = self.get_user(telegram_id)
+        if user:
+            return user.get('is_blocked', 0) == 1
+        return False

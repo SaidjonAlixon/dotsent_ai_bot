@@ -179,6 +179,17 @@ async def cmd_start(message: Message):
     username = message.from_user.username or ""
     full_name = message.from_user.full_name or "Foydalanuvchi"
     
+    # Foydalanuvchi cheklangan yoki yo'qligini tekshirish
+    if db.is_user_banned(telegram_id):
+        await message.answer(
+            "🚫 **Sizning botdan foydalanish huquqingiz yo'q.**\n\n"
+            "Agar bu xato deb hisoblasangiz yoki huquqni qaytadan olish uchun "
+            "qo'llab-quvvatlash guruhiga murojaat qiling:",
+            reply_markup=get_support_buttons(config.SUPPORT_GROUP_URL),
+            parse_mode="Markdown"
+        )
+        return
+    
     args = message.text.split()
     invited_by = None
     
