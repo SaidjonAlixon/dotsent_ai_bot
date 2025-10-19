@@ -6,13 +6,15 @@ Bu Telegram bot (@Dotsent_ai_bot) foydalanuvchilarga AI (OpenAI GPT-4) yordamida
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
-### 3. Asenkron (Parallel) ishlov berish tizimi
+### 3. Asenkron (Parallel) ishlov berish tizimi ✅
 - Bot endi bir paytda bir nechta foydalanuvchiga xizmat ko'rsatadi
 - Har bir kurs ishi/maqola yaratish **background task** da ishlaydi
 - Foydalanuvchi so'rov yuborgach, darhol javob oladi va boshqa funksiyalardan foydalanishi mumkin
 - Tayyor bo'lgach, foydalanuvchiga avtomatik yuboriladi
 - Bot hech qachon to'xtamaydi, barcha foydalanuvchilar parallel foydalanishi mumkin
 - `asyncio.create_task()` yordamida background ishlov berish
+- **MUHIM**: Barcha OpenAI API chaqiruvlari `loop.run_in_executor()` orqali alohida thread'da ishga tushiriladi
+- Bu event loop'ni blocking qilmaslik uchun zarur (synchronous OpenAI SDK ishlatilgan)
 
 ## Oxirgi O'zgarishlar (2025-10-19)
 
@@ -198,12 +200,13 @@ Bot endi professional ilmiy maqola ham yarata oladi!
 ## Keyingi qadamlar
 
 - [x] FSM orqali to'liq ma'lumot yig'ish (F.I.Sh, O'quv yurti, Fan, Kurs)
-- [x] Multi-section OpenAI generation (7 bo'lim, 11,000-14,000 so'z)
+- [x] Multi-section OpenAI generation (7 bo'lim, 16,000-17,000 so'z)
 - [x] Token optimizatsiyasi (26,000 tokens - quota xatoligini bartaraf qilish)
 - [x] Professional DOCX formatlash (titul, reja, mundarija, ilovalar)
 - [x] O'zbekiston standartlariga moslashtirilgan format
 - [x] Ilmiy maqola yaratish (3 tilda annotatsiya, APA format)
 - [x] Asenkron (parallel) ishlov berish - bir paytda ko'p foydalanuvchi
+- [x] Non-blocking OpenAI API chaqiruvlari (run_in_executor)
 - [ ] "Yana yozish" va "Asosiy menyu" tugmalari
 - [ ] "Namuna ishni ko'rish" funksiyasi
 - [ ] PDF export funksiyasi (docx2pdf)

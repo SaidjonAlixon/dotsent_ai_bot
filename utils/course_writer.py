@@ -65,7 +65,9 @@ async def generate_course_work(user_data):
         generate_title_page(name, university, subject, topic, course)
     })
 
-    plan_content = generate_plan(subject, topic)
+    # REJA ni alohida thread'da yaratish (blocking'dan qochish)
+    loop = asyncio.get_event_loop()
+    plan_content = await loop.run_in_executor(None, generate_plan, subject, topic)
     sections.append({'type': 'plan', 'content': plan_content})
     
     # REJA dan sarlavhalarni ajratib olish
@@ -198,7 +200,8 @@ async def generate_course_work(user_data):
         max_words=3000)
     sections.append({'type': 'conclusion', 'content': conclusion_content})
 
-    references_content = generate_references(subject, topic)
+    # ADABIYOTLAR ni alohida thread'da yaratish (blocking'dan qochish)
+    references_content = await loop.run_in_executor(None, generate_references, subject, topic)
     sections.append({'type': 'references', 'content': references_content})
 
     appendix_content = generate_appendix()
@@ -212,21 +215,27 @@ async def generate_course_work(user_data):
 
 async def generate_section_with_ai(prompt, max_words=3000):
     try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{
-                "role":
-                "system",
-                "content":
-                "Siz O'zbekiston oliygohlaridagi talabalar uchun kurs ishi yozuvchi sun'iy intellektsiz. "
-                "Matnni to'liq, ilmiy uslubda, batafsil va professional darajada yozing. "
-                "Matn bir oqimda, uzluksiz yozilishi kerak. Paragraflar orasiga qo'shimcha bo'shliq tashlamang. "
-                "Har bir gap mantiqiy ravishda keyingi gapga bog'lanishi kerak."
-            }, {
-                "role": "user",
-                "content": prompt
-            }],
-            max_tokens=int(max_words * 1.5))
+        # OpenAI chaqiruvini alohida thread'da ishga tushirish (blocking'dan qochish)
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{
+                    "role":
+                    "system",
+                    "content":
+                    "Siz O'zbekiston oliygohlaridagi talabalar uchun kurs ishi yozuvchi sun'iy intellektsiz. "
+                    "Matnni to'liq, ilmiy uslubda, batafsil va professional darajada yozing. "
+                    "Matn bir oqimda, uzluksiz yozilishi kerak. Paragraflar orasiga qo'shimcha bo'shliq tashlamang. "
+                    "Har bir gap mantiqiy ravishda keyingi gapga bog'lanishi kerak."
+                }, {
+                    "role": "user",
+                    "content": prompt
+                }],
+                max_tokens=int(max_words * 1.5)
+            )
+        )
         return response.choices[0].message.content
     except Exception as e:
         print(f"AI xatolik: {e}")
@@ -255,6 +264,7 @@ Toshkent – 2025
 
 
 def generate_plan(subject, topic):
+    """Sinxron funksiya - faqat generate_course_work dan chaqiriladi"""
     try:
         prompt = f"""Fan: {subject}
 Mavzu: {topic}

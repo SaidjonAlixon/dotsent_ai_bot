@@ -1,4 +1,5 @@
 import os
+import asyncio
 from openai import OpenAI
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -173,17 +174,22 @@ MUHIM:
 - Alifbo tartibida yozing (muallifning familiyasi bo'yicha)
 - To'g'ri APA formatda yozing"""
 
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Siz ilmiy maqola uchun APA formatida adabiyotlar ro'yxati tuzuvchisiz."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=2000,
-            temperature=0.7
+        # OpenAI chaqiruvini alohida thread'da ishga tushirish
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Siz ilmiy maqola uchun APA formatida adabiyotlar ro'yxati tuzuvchisiz."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
         )
         
         references = response.choices[0].message.content.strip()
@@ -199,19 +205,24 @@ Author, C. C. (2022). Research methods. Academic Press."""
 async def generate_section_with_ai(prompt, max_words=1000):
     """AI orqali maqola bo'limini yaratish"""
     try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Siz ilmiy maqola yozuvchi sun'iy intellektsiz. "
-                               "Matnni ilmiy uslubda, professional darajada yozing. "
-                               "Matn uzluksiz, bir oqimda yozilishi kerak."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=int(max_words * 1.5),
-            temperature=0.7
+        # OpenAI chaqiruvini alohida thread'da ishga tushirish (blocking'dan qochish)
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Siz ilmiy maqola yozuvchi sun'iy intellektsiz. "
+                                   "Matnni ilmiy uslubda, professional darajada yozing. "
+                                   "Matn uzluksiz, bir oqimda yozilishi kerak."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=int(max_words * 1.5),
+                temperature=0.7
+            )
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
