@@ -19,6 +19,10 @@ db = Database()
 
 class UserStates(StatesGroup):
     waiting_for_kurs_topic = State()
+    waiting_for_kurs_fish = State()
+    waiting_for_kurs_university = State()
+    waiting_for_kurs_subject = State()
+    waiting_for_kurs_course_number = State()
     waiting_for_maqola_topic = State()
     waiting_for_payment_amount = State()
     waiting_for_payment_check = State()
@@ -67,20 +71,96 @@ Boshlash uchun quyidagi tugmalardan birini tanlang! 👇"""
 async def kurs_ishi_handler(message: Message, state: FSMContext):
     """Kurs ishi yozish"""
     await message.answer(
-        "📚 Kurs ishi mavzusini kiriting:\n\nMasalan: Sun'iy intellektning iqtisodiy rivojlanishga ta'siri",
+        "📚 Kurs ishi tayyorlash boshlandi!\n\n"
+        "👤 F.I.Sh. (to'liq ismingiz) kiriting:\n\n"
+        "Masalan: Abdullayev Akmal Rustamovich",
         reply_markup=get_cancel_button()
     )
-    await state.set_state(UserStates.waiting_for_kurs_topic)
+    await state.set_state(UserStates.waiting_for_kurs_fish)
 
-@router.message(UserStates.waiting_for_kurs_topic)
-async def process_kurs_topic(message: Message, state: FSMContext, bot):
-    """Kurs ishi mavzusini qabul qilish"""
+@router.message(UserStates.waiting_for_kurs_fish)
+async def process_kurs_fish(message: Message, state: FSMContext):
+    """F.I.Sh qabul qilish"""
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
         return
     
-    topic = message.text
+    await state.update_data(fish=message.text)
+    await message.answer(
+        "🏫 O'quv yurti nomini kiriting:\n\n"
+        "Masalan: Toshkent Davlat Texnika Universiteti",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(UserStates.waiting_for_kurs_university)
+
+@router.message(UserStates.waiting_for_kurs_university)
+async def process_kurs_university(message: Message, state: FSMContext):
+    """O'quv yurti nomini qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    await state.update_data(university=message.text)
+    await message.answer(
+        "📖 Fan nomini kiriting:\n\n"
+        "Masalan: Axborot texnologiyalari",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(UserStates.waiting_for_kurs_subject)
+
+@router.message(UserStates.waiting_for_kurs_subject)
+async def process_kurs_subject(message: Message, state: FSMContext):
+    """Fan nomini qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    await state.update_data(subject=message.text)
+    await message.answer(
+        "📚 Kurs ishi mavzusini kiriting:\n\n"
+        "Masalan: Sun'iy intellektning iqtisodiy rivojlanishga ta'siri",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(UserStates.waiting_for_kurs_topic)
+
+@router.message(UserStates.waiting_for_kurs_topic)
+async def process_kurs_topic(message: Message, state: FSMContext):
+    """Mavzuni qabul qilish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    await state.update_data(topic=message.text)
+    await message.answer(
+        "🎓 Kurs raqamini kiriting (1, 2, 3 yoki 4):\n\n"
+        "Masalan: 3",
+        reply_markup=get_cancel_button()
+    )
+    await state.set_state(UserStates.waiting_for_kurs_course_number)
+
+@router.message(UserStates.waiting_for_kurs_course_number)
+async def process_kurs_course_number(message: Message, state: FSMContext, bot):
+    """Kurs raqamini qabul qilish va ishni yaratish"""
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    try:
+        course_number = int(message.text)
+        if course_number not in [1, 2, 3, 4]:
+            await message.answer("❌ Kurs raqami 1, 2, 3 yoki 4 bo'lishi kerak.")
+            return
+    except ValueError:
+        await message.answer("❌ Iltimos, faqat raqam kiriting (1, 2, 3 yoki 4).")
+        return
+    
+    await state.update_data(course_number=course_number)
+    
     telegram_id = message.from_user.id
     user = db.get_user(telegram_id)
     
@@ -102,51 +182,78 @@ async def process_kurs_topic(message: Message, state: FSMContext, bot):
         await state.clear()
         return
     
+    data = await state.get_data()
+    
     await message.answer(
-        "⏳ Sizning kurs ishingiz tayyorlanmoqda...\n\n"
-        "Bu biroz vaqt olishi mumkin. Iltimos, kuting.",
+        f"✅ Ma'lumotlar qabul qilindi!\n\n"
+        f"👤 F.I.Sh: {data['fish']}\n"
+        f"🏫 O'quv yurti: {data['university']}\n"
+        f"📖 Fan: {data['subject']}\n"
+        f"📚 Mavzu: {data['topic']}\n"
+        f"🎓 Kurs: {course_number}\n\n"
+        f"⏳ Kurs ishingiz tayyorlanmoqda...\n"
+        f"Bu 2-3 daqiqa vaqt olishi mumkin. Iltimos, kuting.",
         reply_markup=get_main_menu()
     )
     
     try:
-        content = await generate_kurs_ishi(topic)
+        from utils.openai_handler import generate_kurs_ishi_full
+        from utils.docx_creator import create_kurs_ishi_docx
+        
+        content = await generate_kurs_ishi_full(
+            topic=data['topic'],
+            subject=data['subject'],
+            fish=data['fish'],
+            university=data['university'],
+            course_number=course_number
+        )
         
         filename = f"kurs_ishi_{telegram_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        filepath = create_docx(content, filename, topic)
+        docx_path = create_kurs_ishi_docx(
+            content=content,
+            filename=filename,
+            topic=data['topic'],
+            fish=data['fish'],
+            university=data['university'],
+            subject=data['subject'],
+            course_number=course_number
+        )
         
         db.update_balance(telegram_id, -price)
         
-        with open(filepath, 'rb') as doc_file:
+        with open(docx_path, 'rb') as doc_file:
             if config.KURS_ISHLARI_CHANNEL_ID:
                 channel_message = await bot.send_document(
                     chat_id=config.KURS_ISHLARI_CHANNEL_ID,
                     document=doc_file,
                     caption=f"""🧾 Kurs ishi tayyorlandi
 
-👤 Ismi: {user['full_name']}
+👤 F.I.Sh: {data['fish']}
 🆔 ID: {telegram_id}
-🔗 Username: @{user['username'] or 'mavjud emas'}
-📚 Mavzu: {topic}
+🏫 O'quv yurti: {data['university']}
+📖 Fan: {data['subject']}
+📚 Mavzu: {data['topic']}
+🎓 Kurs: {course_number}
 💰 Narx: {price:,} so'm
 🕒 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"""
                 )
                 file_link = f"https://t.me/c/{str(config.KURS_ISHLARI_CHANNEL_ID)[4:]}/{channel_message.message_id}"
             else:
-                file_link = filepath
+                file_link = docx_path
             
             doc_file.seek(0)
             await message.answer_document(
                 document=doc_file,
-                caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {topic}\n💰 To'langan: {price:,} so'm"
+                caption=f"✅ Kurs ishingiz tayyor!\n\n📚 Mavzu: {data['topic']}\n💰 To'langan: {price:,} so'm"
             )
         
-        db.add_order(telegram_id, "kurs_ishi", topic, price, file_link)
+        db.add_order(telegram_id, "kurs_ishi", data['topic'], price, file_link)
         
     except Exception as e:
         logger.error(f"Kurs ishi yaratishda xatolik: {e}")
         await message.answer(
-            "❌ Kurs ishi tayyorlashda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.\n\n"
-            "Balansingiz o'zgartirilmadi.",
+            f"❌ Kurs ishi tayyorlashda xatolik yuz berdi: {str(e)}\n\n"
+            "Balansingiz o'zgartirilmadi. Iltimos, keyinroq qayta urinib ko'ring.",
             reply_markup=get_main_menu()
         )
     

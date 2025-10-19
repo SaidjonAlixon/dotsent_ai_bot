@@ -3,6 +3,7 @@ from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import os
 import logging
+from utils.docx_creator_professional import create_kurs_ishi_docx
 
 logger = logging.getLogger(__name__)
 
