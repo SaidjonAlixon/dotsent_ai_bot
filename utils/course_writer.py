@@ -1,8 +1,52 @@
 import os
+import re
 from openai import OpenAI
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+
+def parse_plan(plan_content):
+    """REJA dan bob va band sarlavhalarini ajratib olish"""
+    titles = {
+        'chapter1': {'title': 'I BOB. NAZARIY ASOSLAR VA ADABIYOTLAR TAHLILI', 'subsections': []},
+        'chapter2': {'title': 'II BOB. AMALIY TAHLIL VA TADQIQOT', 'subsections': []},
+        'chapter3': {'title': 'III BOB. TAKOMILLASHTIRISH TAKLIFLARI VA YECHIMLAR', 'subsections': []}
+    }
+    
+    lines = plan_content.split('\n')
+    current_chapter = None
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # I BOB ni topish
+        if line.startswith('I BOB'):
+            titles['chapter1']['title'] = line
+            current_chapter = 'chapter1'
+        # II BOB ni topish
+        elif line.startswith('II BOB'):
+            titles['chapter2']['title'] = line
+            current_chapter = 'chapter2'
+        # III BOB ni topish
+        elif line.startswith('III BOB'):
+            titles['chapter3']['title'] = line
+            current_chapter = 'chapter3'
+        # 1.1, 1.2 kabi bandlarni topish
+        elif current_chapter and re.match(r'^\d+\.\d+', line):
+            # "1.1. Sarlavha" formatidan faqat sarlavhani olish
+            parts = line.split('.', 2)  # "1", "1", " Sarlavha"
+            if len(parts) >= 3:
+                number = f"{parts[0]}.{parts[1]}"
+                title = parts[2].strip()
+                titles[current_chapter]['subsections'].append({
+                    'number': number,
+                    'title': title
+                })
+    
+    return titles
 
 
 async def generate_course_work(user_data):
@@ -23,6 +67,9 @@ async def generate_course_work(user_data):
 
     plan_content = generate_plan(subject, topic)
     sections.append({'type': 'plan', 'content': plan_content})
+    
+    # REJA dan sarlavhalarni ajratib olish
+    plan_titles = parse_plan(plan_content)
 
     intro_content = await generate_section_with_ai(
         f"Kurs ishi uchun KIRISH qismini yozing. Bu qism 3-4 betni tashkil qilishi kerak (taxminan 1000-1200 so'z). "
@@ -54,18 +101,18 @@ async def generate_course_work(user_data):
         f"Matn ilmiy uslubda, uzluksiz, bir oqimda yozilsin. Paragraflar orasiga enter tashlamang.",
         max_words=2500)
 
+    # REJA dan olingan sarlavhalardan foydalanish
+    ch1_subsections = plan_titles['chapter1']['subsections']
     sections.append({
-        'type':
-        'chapter1',
-        'title':
-        'I BOB. NAZARIY ASOSLAR VA ADABIYOTLAR TAHLILI',
+        'type': 'chapter1',
+        'title': plan_titles['chapter1']['title'],
         'subsections': [{
-            'number': '1.1',
-            'title': 'Asosiy tushunchalar va nazariy asoslar',
+            'number': ch1_subsections[0]['number'] if len(ch1_subsections) > 0 else '1.1',
+            'title': ch1_subsections[0]['title'] if len(ch1_subsections) > 0 else 'Asosiy tushunchalar va nazariy asoslar',
             'content': chapter1_section1
         }, {
-            'number': '1.2',
-            'title': 'Xorijiy va mahalliy tajribalar tahlili',
+            'number': ch1_subsections[1]['number'] if len(ch1_subsections) > 1 else '1.2',
+            'title': ch1_subsections[1]['title'] if len(ch1_subsections) > 1 else 'Xorijiy va mahalliy tajribalar tahlili',
             'content': chapter1_section2
         }]
     })
@@ -86,18 +133,17 @@ async def generate_course_work(user_data):
         f"Matn ilmiy uslubda, uzluksiz, bir oqimda yozilsin. Paragraflar orasiga enter tashlamang.",
         max_words=2500)
 
+    ch2_subsections = plan_titles['chapter2']['subsections']
     sections.append({
-        'type':
-        'chapter2',
-        'title':
-        'II BOB. AMALIY TAHLIL VA TADQIQOT',
+        'type': 'chapter2',
+        'title': plan_titles['chapter2']['title'],
         'subsections': [{
-            'number': '2.1',
-            'title': 'Amaliy tahlil va holat tadqiqi',
+            'number': ch2_subsections[0]['number'] if len(ch2_subsections) > 0 else '2.1',
+            'title': ch2_subsections[0]['title'] if len(ch2_subsections) > 0 else 'Amaliy tahlil va holat tadqiqi',
             'content': chapter2_section1
         }, {
-            'number': '2.2',
-            'title': 'Tendentsiyalar va rivojlanish yo\'nalishlari',
+            'number': ch2_subsections[1]['number'] if len(ch2_subsections) > 1 else '2.2',
+            'title': ch2_subsections[1]['title'] if len(ch2_subsections) > 1 else 'Tendentsiyalar va rivojlanish yo\'nalishlari',
             'content': chapter2_section2
         }]
     })
@@ -118,18 +164,17 @@ async def generate_course_work(user_data):
         f"Matn ilmiy uslubda, uzluksiz, bir oqimda yozilsin. Paragraflar orasiga enter tashlamang.",
         max_words=2000)
 
+    ch3_subsections = plan_titles['chapter3']['subsections']
     sections.append({
-        'type':
-        'chapter3',
-        'title':
-        'III BOB. TAKOMILLASHTIRISH TAKLIFLARI VA YECHIMLAR',
+        'type': 'chapter3',
+        'title': plan_titles['chapter3']['title'],
         'subsections': [{
-            'number': '3.1',
-            'title': 'Muammolarni yechish bo\'yicha takliflar',
+            'number': ch3_subsections[0]['number'] if len(ch3_subsections) > 0 else '3.1',
+            'title': ch3_subsections[0]['title'] if len(ch3_subsections) > 0 else 'Muammolarni yechish bo\'yicha takliflar',
             'content': chapter3_section1
         }, {
-            'number': '3.2',
-            'title': 'Takomillashtirish choralari va istiqbollari',
+            'number': ch3_subsections[1]['number'] if len(ch3_subsections) > 1 else '3.2',
+            'title': ch3_subsections[1]['title'] if len(ch3_subsections) > 1 else 'Takomillashtirish choralari va istiqbollari',
             'content': chapter3_section2
         }]
     })
