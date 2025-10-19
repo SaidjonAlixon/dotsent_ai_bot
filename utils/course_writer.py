@@ -1,5 +1,6 @@
 import os
 import re
+import asyncio
 from openai import OpenAI
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
