@@ -1,0 +1,77 @@
+2. Maqsad:
+Talabalar uchun kurs ishini avtomatik tarzda tuzadigan Telegram bot yaratish. Bot foydalanuvchidan ma’lumot olib, AI orqali 35–40 betli kurs ishini tayyorlaydi.
+________________________________________
+3. Asosiy imkoniyatlar:
+🧠 AI funksiyasi:
+•	OpenAI API orqali foydalanuvchi mavzusiga mos to‘liq kurs ishi (35–40 bet) yozadi.
+•	Har bir bet o‘rtacha 300–350 so‘zdan iborat bo‘ladi.
+•	Natijada kurs ishi taxminan 11 000 – 14 000 so‘z atrofida bo‘ladi.
+•	Tuzilma qat’iy ravishda quyidagicha bo‘ladi:
+•	1. Titul varag‘i
+•	2. Reja
+•	3. Kirish qismi
+•	4. Asosiy qism (bo‘lim va bandlarga bo‘lingan)
+•	5. Xulosa va takliflar
+•	6. Foydalanilgan adabiyotlar ro‘yxati
+•	7. Ilovalar
+•	8. Mundarija
+•	Har bir qism kurs ishi format qoidalariga mos yoziladi (A4, 14-shrift, 1.5 interval, marg‘inalar bilan).
+________________________________________
+
+🔘 Qoidalar bo‘limi:
+Bot foydalanuvchiga kurs ishi uchun asosiy talablarni yuboradi:
+•	35–40 bet (kompyuterda yozilgan)
+•	A4, 14-shrift, 1.5 interval
+•	Chap hoshiyasi 30 mm, o‘ng 15 mm, yuqori 20 mm, pastki 20 mm
+•	Raqamlangan sahifalar
+•	Titul varaq, reja, kirish, asosiy qism, xulosa, adabiyotlar, ilovalar, mundarija tartibida
+________________________________________
+5. Foydalanuvchidan olinadigan ma’lumotlar:
+1.	F.I.Sh.
+2.	O‘quv yurti nomi
+3.	Fan nomi
+4.	Kurs ishi mavzusi
+5.	Kurs raqami (1–4)
+6.	Til 🇺🇿 
+________________________________________
+6. Botning ish ketma-ketligi:
+1.	/start → Salomlashuv va til tanlash
+2.	“🎓 Kurs ishi yozish” tugmasi → foydalanuvchidan ma’lumotlar olinadi
+3.	Ma’lumot to‘plangach, bot shunday xabar beradi:
+4.	✅ Ma’lumotlar qabul qilindi.
+5.	AI yordamida 35–40 betli kurs ishi tayyorlanmoqda...
+6.	AI (GPT) orqali matn 8 ta bo‘limda hosil qilinadi.
+7.	Tayyor kurs ishi word shaklida yaratiladi va foydalanuvchiga yuboriladi.
+8.	Yakunda “🔄 Yana yozish” yoki “🏠 Asosiy menyu” tugmalari chiqadi.
+________________________________________
+7. AI Prompt (so‘rov):
+prompt = f"""
+Siz O‘zbekiston oliygohlaridagi talabalar uchun kurs ishi yozuvchi sun’iy intellektsiz.
+Quyidagi ma’lumotlar asosida to‘liq kurs ishi yozing:
+
+Fan: {fan}
+Mavzu: {mavzu}
+Kurs: {kurs}
+Talaba: {ism}
+O‘quv yurti: {tashkilot}
+
+Kurs ishi talablari:
+- Hajmi: 35–40 bet
+- Format: A4, 14-shrift, 1.5 interval
+- Tuzilma:
+  1. Titul varag‘i
+  2. Reja
+  3. Kirish qismi
+  4. Asosiy qism
+  5. Xulosa va takliflar
+  6. Foydalanilgan adabiyotlar
+  7. Ilovalar
+  8. Mundarija
+Matn ilmiy uslubda, uzviy va mavzuga mos bo‘lishi kerak.
+"""
+9. Qo‘shimcha funksiyalar:
+•	📎 Har bir kurs ishi WORD saqlanadi
+•	🧾 “Namuna ishni ko‘rish” — oldindan tayyor namunaviy kurs ishi 
+•	🧠 AI chiqargan matn 35–40 bet oralig‘ida bo‘lishi nazorat qilinadi
+(AI chiqargan matn uzunligi tekshirib, kam bo‘lsa avtomatik davom ettiriladi)
+

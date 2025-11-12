@@ -1,0 +1,247 @@
+menga telagram bot tuzib ber faqat kerakli fayllarni yarat aniqlik bilan 
+Ma’lumotlar bazasi: SQLite (doimiy saqlanishi ta’minlanadi, yangilanishda o‘chmaydi)
+Asosiy vazifasi: Foydalanuvchiga kurs ishi va ilmiy maqola tayyorlab berish, balans tizimi orqali to‘lov va promokod orqali chegirma berish.
+
+2. Foydalanuvchi interfeysi
+
+Foydalanuvchi uchun quyidagi menyu tugmalari bo‘ladi:
+
+🔹 Asosiy menyu tugmalari:
+
+🧾 Kurs ishi yozish
+
+Foydalanuvchi mavzuni kiritadi (AI orqali matn tayyorlanadi).
+
+Natijada tayyor kurs ishi  DOCX shaklida kanalga yuboriladi.
+
+Foydalanuvchiga xabar: “Sizning kurs ishingiz tayyorlanmoqda...”
+
+Tayyor bo‘lgach, foydalanuvchiga to‘liq ma’lumot yuboriladi.
+
+📰 Maqola yozish
+
+Foydalanuvchi mavzu kiritadi.
+
+AI orqali maqola tayyorlanadi.
+
+Tayyor maqola alohida “Maqolalar kanali”ga yuboriladi.
+
+💰 Balansim 
+
+Balans miqdori ko‘rsatiladi.
+
+Balansni to‘ldirish uchun:
+
+To‘lov chekini yuborish.
+
+Admin tekshirib “Tasdiqlovchi kanal”da chekni tasdiqlaydi.
+
+Pul ishlash tugmasi
+ichida rafel 
+
+Pul ishlash bo‘limida “Referal havola” yaratiladi (referal orqali keltirilgan har bir foydalanuvchi uchun bonus beriladi).
+
+👤 Profil
+
+Foydalanuvchi ID, username, ismi, balans, referal soni va ro‘yxatdan o‘tgan sana ko‘rsatiladi.
+
+🎁 Promokodlarim
+
+Foydalanuvchi mavjud promokodlardan foydalanishi mumkin.
+
+Admin tomonidan berilgan chegirmalar (foiz ko‘rinishida) avtomatik hisoblanadi.
+
+❓ Yordam
+
+“Botdan qanday foydalanish kerak?” bo‘yicha qo‘llanma.
+
+Admin bilan bog‘lanish tugmasi.
+
+3. Admin panel menyusi
+
+Admin uchun quyidagi tugmalar mavjud bo‘ladi:
+
+🔹 Admin menyusi:
+
+📢 Ommaviy xabar yuborish
+
+Barcha foydalanuvchilarga matn, rasm yoki fayl yuborish.
+
+💬 Bir kishiga ID orqali xabar yuborish
+
+Ma’lum ID foydalanuvchiga xabar yuboradi.
+
+💳 Balans boshqarish
+
+Foydalanuvchi balansini ko‘rish, to‘ldirish yoki kamaytirish.
+
+📊 Statistika
+
+Umumiy foydalanuvchilar soni, faol foydalanuvchilar, kurs ishlar soni, maqolalar soni, so‘rovlar soni va AI so‘rov statistikasini ko‘rsatadi.
+
+🤝 Rafel (Referal) sozlamalari
+
+Har bir referal uchun beriladigan bonus miqdorini o‘rnatish yoki o‘zgartirish.
+
+💸 Narxlarni boshqarish
+
+“Kurs ishi” va “Maqola” uchun narxlarni kiritish yoki o‘zgartirish.
+
+Foydalanuvchi tanlov qilganda shu narx avtomatik ko‘rsatiladi.
+
+🎟 Promokod yaratish
+
+Promokod nomi.
+
+Qaysi turdagi ish uchun (kurs ishi yoki maqola).
+
+Chegirma foizi (%).
+
+Amal qilish muddati.
+
+📂 AI natijalari
+
+Kurs ishlari va maqolalar avtomatik ravishda alohida Telegram kanallarga yuboriladi:
+
+@dotsent_kurs_ishlari ID si orqali
+
+@dotsent_maqolalar ID si orqali
+
+Har bir yozuvda quyidagilar saqlanadi:
+
+ID
+
+Username
+
+Ismi
+
+Mavzu
+
+Narxi
+
+Tayyorlangan sana
+
+Fayl (DOCX)
+
+💵 To‘lov tasdiqlash kanali
+
+Foydalanuvchilar yuborgan cheklarni ko‘rish.
+
+Admin “✅ Tasdiqlash” yoki “❌ Rad etish” tugmalari orqali chekni ko‘rib chiqadi.
+
+Tasdiqlansa — foydalanuvchining balansiga miqdor qo‘shiladi.
+
+4. Texnik jihatlar
+Bo‘lim	Talab
+Platforma	Telegram Bot (Python Aiogram yoki Node.js Telegraf)
+Baza	SQLite (saqlanadigan: foydalanuvchi ma’lumotlari, balans, referal, promokodlar, narxlar, tarix)
+AI integratsiyasi	OpenAI API (ChatGPT model) orqali avtomatik matn yaratish
+To‘lov tizimi	Qo‘lda chek tasdiqlash (admin tomonidan)
+Xavfsizlik	- Admin ID orqali himoyalangan
+- Baza avtomatik backup qiladi
+- Yangilanishda o‘chmaydi
+Server	Railway 
+Fayl saqlash	Tayyor ishlar DOCX formatda kanalga yuboriladi va bazada link saqlanadi
+Sozlamalar	Admin tomonidan dinamik tarzda o‘zgartiriladi (narx, promokod, bonus, chegirma, AI tili va h.k.)
+5. Ma’lumotlar bazasi (SQLite) tuzilmasi
+
+users
+
+id (integer, primary key)
+
+telegram_id
+
+username
+
+full_name
+
+balance
+
+referal_code
+
+invited_by
+
+register_date
+
+orders
+
+id
+
+user_id
+
+type ("kurs ishi" / "maqola")
+
+topic
+
+price
+
+file_link
+
+created_at
+
+payments
+
+id
+
+user_id
+
+amount
+
+status ("pending", "approved", "rejected")
+
+check_photo_link
+
+created_at
+
+promocodes
+
+id
+
+code
+
+work_type ("kurs ishi" / "maqola")
+
+discount_percent
+
+expiry_date
+
+active (bool)
+
+settings
+
+key
+
+value
+
+6. AI orqali tayyorlash jarayoni
+
+Foydalanuvchi mavzuni kiritadi.
+
+Bot OpenAI API orqali javob yaratadi.
+
+Matn texnik formatga keltiriladi (Times New Roman, 14pt, 1.5 interval).
+
+DOCX yoki PDF faylga o‘tkaziladi.
+
+Fayl kanallarga yuboriladi va foydalanuvchiga natija jo‘natiladi.
+
+7. Foydalanuvchi ma’lumotlarini yuborish formatlari (kanalda)
+📘 Kurs ishlari kanali:
+🧾 Kurs ishi tayyorlandi
+👤 Ismi: Saidmuhammadalixon
+🆔 ID: 104892334
+🔗 Username: @saydxuz
+📚 Mavzu: Sun’iy intellektning iqtisodiy rivojlanishga ta’siri
+💰 Narx: 25 000 so‘m
+🕒 Sana: 2025-10-18
+📎 Fayl: docx
+
+📰 Maqolalar kanali:
+
+Shu formatda, lekin “Maqola tayyorlandi” deb boshlanadi.
+
+8. Qo‘shimcha imkoniyatlar
+
+Auto-backup: Baza har 24 soatda avtomatik nusxalanadi.
+
+Anti-crash: Bot o‘chsa ham bazadagi ma’lumotlar saqlanadi.
