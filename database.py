@@ -256,8 +256,8 @@ class Database:
             cursor = conn.cursor()
             
             cursor.execute("""
-            INSERT INTO promocodes (code, work_type, discount_percent, expiry_date, usage_type, used_by)
-            VALUES (?, ?, ?, ?, ?, '[]')
+            INSERT INTO promocodes (code, work_type, discount_percent, expiry_date, usage_type, used_by, active)
+            VALUES (?, ?, ?, ?, ?, '[]', 1)
             """, (code, work_type, discount_percent, expiry_date, usage_type))
             
             conn.commit()
@@ -313,12 +313,13 @@ class Database:
         return promocodes
     
     def delete_promocode(self, promo_id: int) -> bool:
-        """Promokodni o'chirish"""
+        """Promokodni o'chirish (active = 0 qilish)"""
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            cursor.execute("DELETE FROM promocodes WHERE id = ?", (promo_id,))
+            # Promokodni butunlay o'chirish o'rniga active = 0 qilamiz
+            cursor.execute("UPDATE promocodes SET active = 0 WHERE id = ?", (promo_id,))
             
             conn.commit()
             conn.close()
