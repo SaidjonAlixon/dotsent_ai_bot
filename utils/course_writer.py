@@ -74,6 +74,49 @@ async def generate_course_work(user_data):
     # REJA dan sarlavhalarni ajratib olish
     plan_titles = parse_plan(plan_content)
 
+    # ANNOTATSIYA ni 3 tilda yaratish (O'zbek, Ingliz, Rus)
+    annotation_uzbek = await generate_section_with_ai(
+        f"Kurs ishi uchun O'zbek tilida ANNOTATSIYA yozing. Fan: {subject}, Mavzu: {topic}. "
+        f"Annotatsiya quyidagilarni o'z ichiga olishi kerak:\n"
+        f"1. Tadqiqotning asosiy maqsadi va vazifalari\n"
+        f"2. Tadqiqot metodologiyasi\n"
+        f"3. Asosiy natijalar va xulosalar\n"
+        f"4. Tadqiqotning ilmiy va amaliy ahamiyati\n\n"
+        f"Annotatsiya qisqa, aniq va professional bo'lishi kerak (taxminan 150-200 so'z). "
+        f"Matn ilmiy uslubda, uzluksiz yozilsin.",
+        max_words=250)
+    
+    annotation_english = await generate_section_with_ai(
+        f"Write an ABSTRACT in English for a course work. Subject: {subject}, Topic: {topic}. "
+        f"The abstract should include:\n"
+        f"1. Main purpose and objectives of the research\n"
+        f"2. Research methodology\n"
+        f"3. Main results and conclusions\n"
+        f"4. Scientific and practical significance of the research\n\n"
+        f"The abstract should be brief, clear and professional (approximately 150-200 words). "
+        f"Write in scientific style, continuously.",
+        max_words=250)
+    
+    annotation_russian = await generate_section_with_ai(
+        f"Напишите АННОТАЦИЮ на русском языке для курсовой работы. Предмет: {subject}, Тема: {topic}. "
+        f"Аннотация должна включать:\n"
+        f"1. Основную цель и задачи исследования\n"
+        f"2. Методологию исследования\n"
+        f"3. Основные результаты и выводы\n"
+        f"4. Научное и практическое значение исследования\n\n"
+        f"Аннотация должна быть краткой, четкой и профессиональной (примерно 150-200 слов). "
+        f"Текст должен быть написан в научном стиле, непрерывно.",
+        max_words=250)
+    
+    sections.append({
+        'type': 'annotation',
+        'content': {
+            'uzbek': annotation_uzbek,
+            'english': annotation_english,
+            'russian': annotation_russian
+        }
+    })
+
     intro_content = await generate_section_with_ai(
         f"Kurs ishi uchun KIRISH qismini yozing. Bu qism 4-5 betni tashkil qilishi kerak (taxminan 1400-1600 so'z). "
         f"Fan: {subject}, Mavzu: {topic}. "
@@ -205,7 +248,8 @@ async def generate_course_work(user_data):
     references_content = await loop.run_in_executor(None, generate_references, subject, topic)
     sections.append({'type': 'references', 'content': references_content})
 
-    appendix_content = generate_appendix()
+    # ILOVALAR ni AI orqali yaratish
+    appendix_content = await generate_appendix(subject, topic)
     sections.append({'type': 'appendix', 'content': appendix_content})
     
     toc_content = plan_content
@@ -393,15 +437,92 @@ MUHIM:
 7. Maxsus adabiyotlar va ilmiy jurnallar."""
 
 
-def generate_appendix():
-    return """1-ILOVA
-
+async def generate_appendix(subject, topic):
+    """ILOVALAR bo'limini yaratish - kod yozishga mos mavzular uchun kod va natija, boshqalar uchun diagramma/ko'rsatkichlar"""
+    try:
+        # Mavzuni kod yozishga mosligini tekshirish
+        coding_keywords = [
+            'dasturlash', 'programming', 'kod', 'code', 'algoritm', 'algorithm', 
+            'kompyuter', 'computer', 'software', 'dastur', 'application', 
+            'python', 'java', 'javascript', 'c++', 'c#', 'php', 'html', 'css',
+            'database', 'baza', 'web', 'sayt', 'mobil', 'mobile', 'android', 'ios',
+            'artificial intelligence', 'sun\'iy intellekt', 'machine learning', 'mashina o\'rganishi',
+            'data structure', 'ma\'lumotlar strukturas', 'network', 'tarmoq',
+            'security', 'xavfsizlik', 'cybersecurity', 'kiberxavfsizlik'
+        ]
+        
+        topic_lower = topic.lower()
+        subject_lower = subject.lower()
+        combined_text = f"{subject_lower} {topic_lower}"
+        
+        is_coding_related = any(keyword in combined_text for keyword in coding_keywords)
+        
+        if is_coding_related:
+            # Kod yozishga mos mavzu - kod va natija yozish
+            appendix_content = await generate_section_with_ai(
+                f"Kurs ishi uchun ILOVALAR bo'limini yozing. Fan: {subject}, Mavzu: {topic}. "
+                f"Bu mavzu kod yozishga oid, shuning uchun quyidagilarni yozing:\n\n"
+                f"1-ILOVA bo'limida:\n"
+                f"- Kod va dastur\n"
+                f"- Kodning to'liq matni (mavzu bo'yicha real kod, masalan Python, Java, JavaScript va h.k.)\n"
+                f"- Kodning har bir qismini qisqacha tushuntirish\n"
+                f"- Dastur ishlashi uchun kerakli kutubxonalar va konfiguratsiyalar\n\n"
+                f"2-ILOVA bo'limida:\n"
+                f"- Dasturning ishlashi natijalari\n"
+                f"- Screenshot'lar yoki chiqish natijalari tavsifi (text formatda)\n"
+                f"- Natijalarni tahlil qilish va sharhlash\n"
+                f"- Dasturning afzalliklari va cheklovlari\n\n"
+                f"Format:\n"
+                f"1-ILOVA\n"
+                f"Kod va dastur\n"
+                f"[Bu yerda to'liq kod va tushuntirishlar]\n\n"
+                f"2-ILOVA\n"
+                f"Dastur ishlashi natijalari\n"
+                f"[Bu yerda natijalar va tahlil]\n\n"
+                f"Matn ilmiy uslubda, uzluksiz yozilsin. Kod va natijalar professional va mavzuga mos bo'lishi kerak. "
+                f"Hech qanday holatda bo'sh qolmasligi kerak.",
+                max_words=2000
+            )
+        else:
+            # Kod yozishga mos bo'lmagan mavzu - diagramma va ko'rsatkichlar
+            appendix_content = await generate_section_with_ai(
+                f"Kurs ishi uchun ILOVALAR bo'limini yozing. Fan: {subject}, Mavzu: {topic}. "
+                f"Bu mavzu kod yozishga mos emas, shuning uchun quyidagilarni yozing:\n\n"
+                f"1-ILOVA bo'limida:\n"
+                f"- Jadval va diagrammalar\n"
+                f"- Mavzu bo'yicha jadvallar (tadqiqot natijalari, statistik ma'lumotlar, solishtirish jadvallari)\n"
+                f"- Diagrammalar tavsifi (grafiklar, pie chart, bar chart, line chart va h.k.)\n"
+                f"- Har bir jadval va diagrammaning maqsadi va ahamiyati\n"
+                f"- Jadvallardagi ma'lumotlarni tahlil qilish\n\n"
+                f"2-ILOVA bo'limida:\n"
+                f"- Qo'shimcha materiallar va ko'rsatkichlar\n"
+                f"- Mavzuga oid ko'rsatkichlar (statistik ma'lumotlar, tahlillar)\n"
+                f"- Qo'shimcha grafiklar yoki vizual materiallar tavsifi\n"
+                f"- So'rovnomalar natijalari yoki boshqa tadqiqot ma'lumotlari\n"
+                f"- Materiallarning tadqiqotga qo'shgan hissasi\n\n"
+                f"Format:\n"
+                f"1-ILOVA\n"
+                f"Jadval va diagrammalar\n"
+                f"[Bu yerda jadvallar va diagrammalar tavsifi]\n\n"
+                f"2-ILOVA\n"
+                f"Qo'shimcha materiallar\n"
+                f"[Bu yerda qo'shimcha materiallar tavsifi]\n\n"
+                f"Matn ilmiy uslubda, uzluksiz yozilsin. Jadvallar va diagrammalar professional va mavzuga mos bo'lishi kerak. "
+                f"Hech qanday holatda bo'sh qolmasligi kerak. Barcha ma'lumotlar haqiqiy ko'rinishda bo'lishi kerak.",
+                max_words=2000
+            )
+        
+        return appendix_content
+        
+    except Exception as e:
+        print(f"ILOVALAR yaratishda xatolik: {e}")
+        # Fallback - minimal content
+        return """1-ILOVA
 Jadval va diagrammalar
 
-[Bu yerda tadqiqot natijalari bo'yicha jadvallar va grafiklar joylashtiriladi]
+[Bu yerda jadvallar va diagrammalar tavsifi]
 
 2-ILOVA
-
 Qo'shimcha materiallar
 
-[Bu yerda qo'shimcha hujjatlar va materiallar joylashtiriladi]"""
+[Bu yerda qo'shimcha materiallar tavsifi]"""

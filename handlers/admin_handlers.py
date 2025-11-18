@@ -461,13 +461,13 @@ async def promocode_usage_type(message: Message, state: FSMContext):
     
     if message.text == "🔄 1 martalik (1 ta foydalanuvchi)":
         usage_type = "one_time"
-        usage_desc = "1 martalik (faqat 1 ta foydalanuvchi)"
+        usage_desc = "1 martalik (1 ta foydalanuvchi ishlatgandan keyin o'chib ketadi)"
     elif message.text == "👥 Har bir foydalanuvchi uchun 1 marta":
         usage_type = "per_user"
-        usage_desc = "Har bir foydalanuvchi 1 marta"
+        usage_desc = "Har bir foydalanuvchi 1 marta ishlata oladi"
     elif message.text == "♾️ Cheksiz foydalanish":
         usage_type = "unlimited"
-        usage_desc = "Cheksiz"
+        usage_desc = "Cheksiz (hamma foydalana oladi)"
     else:
         await message.answer("❌ Iltimos, tugmalardan birini tanlang.")
         return

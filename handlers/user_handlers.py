@@ -422,12 +422,50 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
         await state.clear()
         return
     
-    price = int(db.get_setting("kurs_ishi_price", str(config.DEFAULT_KURS_ISH_PRICE)))
+    # State'dan promokod ma'lumotlarini olish (agar "Roziman" bosilganda qo'shilgan bo'lsa)
+    data = await state.get_data()
+    original_price = data.get('original_price')
+    discount_amount = data.get('discount_amount', 0)
+    promocode_used = data.get('promocode_used')
+    final_price = data.get('final_price')  # State'dan yakuniy narxni olish
+    
+    # Agar state'da promokod ma'lumotlari yo'q bo'lsa, user'dan tekshirish
+    if original_price is None:
+        price = int(db.get_setting("kurs_ishi_price", str(config.DEFAULT_KURS_ISH_PRICE)))
+        original_price = price
+        discount_amount = 0
+        promocode_used = None
+        
+        # Foydalanuvchining aktiv promokodini tekshirish
+        if user.get('active_promocode'):
+            promocode = db.get_promocode(user['active_promocode'])
+            if promocode and promocode['work_type'] == 'kurs_ishi':
+                # Promokodni yana bir bor tekshirish (ishlatish mumkinligini)
+                can_use, _ = db.can_use_promocode(user['active_promocode'], telegram_id)
+                if can_use:
+                    discount_percent = promocode['discount_percent']
+                    discount_amount = int(price * discount_percent / 100)
+                    price = price - discount_amount
+                    promocode_used = user['active_promocode']
+    else:
+        # State'dan olingan narx (chegirma bilan)
+        # Agar final_price saqlangan bo'lsa, uni ishlatamiz, aks holda hisoblaymiz
+        if final_price is not None:
+            price = final_price
+        else:
+            price = original_price - discount_amount
     
     if user["balance"] < price:
+        discount_text = ""
+        if discount_amount > 0:
+            promocode_temp = db.get_promocode(promocode_used) if promocode_used else None
+            if promocode_temp:
+                discount_text = f"💰 Chegirma qo'llandi!\n💵 Asl narx: {original_price:,} so'm\n🎁 Chegirma: {discount_amount:,} so'm ({promocode_temp.get('discount_percent')}%)\n\n"
+        
         await message.answer(
             f"❌ Balansingizda mablag' yetarli emas!\n\n"
             f"Kerakli summa: {price:,} so'm\n"
+            f"{discount_text}"
             f"Sizning balansingiz: {user['balance']:,} so'm\n\n"
             f"Iltimos, avval balansni to'ldiring.",
             reply_markup=get_main_menu()
@@ -437,15 +475,22 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
     
     data = await state.get_data()
     
+    price_info = f"💰 Narx: {price:,} so'm"
+    if discount_amount > 0:
+        promocode_temp = db.get_promocode(promocode_used) if promocode_used else None
+        if promocode_temp:
+            price_info = f"💰 Narx: {price:,} so'm\n💵 Asl narx: {original_price:,} so'm\n🎁 Chegirma: {discount_amount:,} so'm ({promocode_temp['discount_percent']}%)"
+    
     await message.answer(
         f"✅ Ma'lumotlar qabul qilindi!\n\n"
         f"👤 F.I.Sh: {data['fish']}\n"
         f"🏫 O'quv yurti: {data['university']}\n"
         f"📖 Fan: {data['subject']}\n"
         f"📚 Mavzu: {data['topic']}\n"
-        f"🎓 Kurs: {course_number}\n\n"
+        f"🎓 Kurs: {course_number}\n"
+        f"{price_info}\n\n"
         f"⏳ Kurs ishingiz tayyorlanmoqda...\n"
-        f"📲 Tayyor bo'lgach sizga yuboriladi (2-3 daqiqa)\n\n"
+        f"📲 Tayyor bo'lgach sizga yuboriladi (10-15 daqiqa)\n\n"
         f"Shu vaqt ichida botning boshqa funksiyalaridan foydalanishingiz mumkin!",
         reply_markup=get_main_menu()
     )
@@ -457,6 +502,22 @@ async def process_kurs_course_number(message: Message, state: FSMContext, bot):
         'topic': data['topic'],
         'course': course_number
     }
+    
+    # Promokodni ishlatilgan deb belgilash
+    if promocode_used:
+        promocode = db.get_promocode(promocode_used)
+        usage_type = promocode.get('usage_type', 'unlimited')
+        
+        if usage_type == "one_time":
+            # 1 martalik - buyurtma yaratilganda o'chiriladi
+            db.mark_promocode_as_used(promocode['id'], telegram_id)
+            db.deactivate_promocode(promocode['id'])
+        elif usage_type == "per_user":
+            # Har bir foydalanuvchi 1 marta
+            db.mark_promocode_as_used(promocode['id'], telegram_id)
+        
+        # Foydalanuvchining aktiv promokodini o'chirish
+        db.clear_user_promocode(telegram_id)
     
     # Background task yaratish
     asyncio.create_task(
@@ -556,12 +617,50 @@ async def process_maqola_supervisor(message: Message, state: FSMContext, bot):
         await state.clear()
         return
     
-    price = int(db.get_setting("maqola_price", str(config.DEFAULT_MAQOLA_PRICE)))
+    # State'dan promokod ma'lumotlarini olish (agar "Roziman" bosilganda qo'shilgan bo'lsa)
+    state_data = await state.get_data()
+    original_price = state_data.get('original_price')
+    discount_amount = state_data.get('discount_amount', 0)
+    promocode_used = state_data.get('promocode_used')
+    final_price = state_data.get('final_price')  # State'dan yakuniy narxni olish
+    
+    # Agar state'da promokod ma'lumotlari yo'q bo'lsa, user'dan tekshirish
+    if original_price is None:
+        price = int(db.get_setting("maqola_price", str(config.DEFAULT_MAQOLA_PRICE)))
+        original_price = price
+        discount_amount = 0
+        promocode_used = None
+        
+        # Foydalanuvchining aktiv promokodini tekshirish
+        if user.get('active_promocode'):
+            promocode = db.get_promocode(user['active_promocode'])
+            if promocode and promocode['work_type'] == 'maqola':
+                # Promokodni yana bir bor tekshirish (ishlatish mumkinligini)
+                can_use, _ = db.can_use_promocode(user['active_promocode'], telegram_id)
+                if can_use:
+                    discount_percent = promocode['discount_percent']
+                    discount_amount = int(price * discount_percent / 100)
+                    price = price - discount_amount
+                    promocode_used = user['active_promocode']
+    else:
+        # State'dan olingan narx (chegirma bilan)
+        # Agar final_price saqlangan bo'lsa, uni ishlatamiz, aks holda hisoblaymiz
+        if final_price is not None:
+            price = final_price
+        else:
+            price = original_price - discount_amount
     
     if user["balance"] < price:
+        discount_text = ""
+        if discount_amount > 0:
+            promocode_temp = db.get_promocode(promocode_used) if promocode_used else None
+            if promocode_temp:
+                discount_text = f"💰 Chegirma qo'llandi!\n💵 Asl narx: {original_price:,} so'm\n🎁 Chegirma: {discount_amount:,} so'm ({promocode_temp.get('discount_percent')}%)\n\n"
+        
         await message.answer(
             f"❌ Balansingizda mablag' yetarli emas!\n\n"
             f"Kerakli summa: {price:,} so'm\n"
+            f"{discount_text}"
             f"Sizning balansingiz: {user['balance']:,} so'm\n\n"
             f"Iltimos, avval balansni to'ldiring.",
             reply_markup=get_main_menu()
@@ -587,6 +686,14 @@ async def process_maqola_supervisor(message: Message, state: FSMContext, bot):
     confirmation_text += f"📚 Soha va lavozim: {field_position}\n"
     if supervisor:
         confirmation_text += f"👨‍🏫 Ustoz: {supervisor}\n"
+    
+    price_info = f"💰 Narx: {price:,} so'm"
+    if discount_amount > 0:
+        promocode_temp = db.get_promocode(promocode_used) if promocode_used else None
+        if promocode_temp:
+            price_info = f"💰 Narx: {price:,} so'm\n💵 Asl narx: {original_price:,} so'm\n🎁 Chegirma: {discount_amount:,} so'm ({promocode_temp['discount_percent']}%)"
+    
+    confirmation_text += f"\n{price_info}\n"
     confirmation_text += f"\n⏳ Maqolangiz tayyorlanmoqda...\n"
     confirmation_text += f"📲 Tayyor bo'lgach sizga yuboriladi (2-3 daqiqa)\n\n"
     confirmation_text += f"Shu vaqt ichida botning boshqa funksiyalaridan foydalanishingiz mumkin!"
@@ -611,6 +718,22 @@ async def process_maqola_supervisor(message: Message, state: FSMContext, bot):
         'subject': field_position.split(',')[0] if ',' in field_position else field_position,
         'authors': authors
     }
+    
+    # Promokodni ishlatilgan deb belgilash
+    if promocode_used:
+        promocode = db.get_promocode(promocode_used)
+        usage_type = promocode.get('usage_type', 'unlimited')
+        
+        if usage_type == "one_time":
+            # 1 martalik - buyurtma yaratilganda o'chiriladi
+            db.mark_promocode_as_used(promocode['id'], telegram_id)
+            db.deactivate_promocode(promocode['id'])
+        elif usage_type == "per_user":
+            # Har bir foydalanuvchi 1 marta
+            db.mark_promocode_as_used(promocode['id'], telegram_id)
+        
+        # Foydalanuvchining aktiv promokodini o'chirish
+        db.clear_user_promocode(telegram_id)
     
     # Background task yaratish
     asyncio.create_task(
@@ -800,41 +923,94 @@ async def profile_handler(message: Message):
 
 @router.message(F.text == "🎁 Promokodlarim")
 async def promocode_handler(message: Message, state: FSMContext):
-    """Promokod kiritish"""
+    """Promokodlarim - aktiv promokodni ko'rsatish va yangi promokod kiritish"""
+    telegram_id = message.from_user.id
+    user = db.get_user(telegram_id)
+    
+    if not user:
+        await message.answer("❌ Foydalanuvchi topilmadi. /start buyrug'ini yuboring.", reply_markup=get_main_menu())
+        return
+    
+    # Aktiv promokodni ko'rsatish
+    active_promocode_text = ""
+    if user.get('active_promocode'):
+        promocode = db.get_promocode(user['active_promocode'])
+        if promocode:
+            work_type_name = "Kurs ishi" if promocode['work_type'] == "kurs_ishi" else "Maqola"
+            
+            if promocode['usage_type'] == "one_time":
+                usage_desc = "1 martalik (1 ta foydalanuvchi)"
+            elif promocode['usage_type'] == "per_user":
+                usage_desc = "Har bir foydalanuvchi 1 marta"
+            else:
+                usage_desc = "Cheksiz"
+            
+            active_promocode_text = (
+                f"✅ **Aktiv promokod:**\n\n"
+                f"🎁 Kod: `{promocode['code']}`\n"
+                f"📝 Turi: {work_type_name}\n"
+                f"💰 Chegirma: {promocode['discount_percent']}%\n"
+                f"⏱ Foydalanish: {usage_desc}\n\n"
+            )
+        else:
+            # Promokod topilmadi (o'chirilgan bo'lishi mumkin)
+            db.clear_user_promocode(telegram_id)
+    else:
+        active_promocode_text = "ℹ️ Hozirda aktiv promokodingiz yo'q.\n\n"
+    
     await message.answer(
-        "🎁 Promokodni kiriting:\n\n"
-        "Promokod orqali chegirmaga ega bo'ling!",
-        reply_markup=get_cancel_button()
+        f"{active_promocode_text}"
+        f"🎁 **Yangi promokod kiritish:**\n\n"
+        f"Promokodni kiriting va chegirmaga ega bo'ling!",
+        reply_markup=get_cancel_button(),
+        parse_mode="Markdown"
     )
     await state.set_state(UserStates.waiting_for_promocode)
 
 @router.message(UserStates.waiting_for_promocode)
 async def process_promocode(message: Message, state: FSMContext):
-    """Promokodni tekshirish"""
+    """Promokodni tekshirish va ishlatish"""
     if message.text == "❌ Bekor qilish":
         await state.clear()
         await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
         return
     
     code = message.text.strip().upper()
-    promocode = db.get_promocode(code)
+    user_id = message.from_user.id
     
-    if not promocode:
-        await message.answer("❌ Bunday promokod topilmadi yoki muddati tugagan.", reply_markup=get_main_menu())
+    # Promokodni tekshirish
+    can_use, message_text = db.can_use_promocode(code, user_id)
+    
+    if not can_use:
+        await message.answer(message_text, reply_markup=get_main_menu())
         await state.clear()
         return
     
-    if promocode['expiry_date']:
-        expiry = datetime.strptime(promocode['expiry_date'], "%Y-%m-%d")
-        if expiry < datetime.now():
-            await message.answer("❌ Promokod muddati tugagan.", reply_markup=get_main_menu())
-            await state.clear()
-            return
+    # Promokod ma'lumotlarini olish
+    promocode = db.get_promocode(code)
+    
+    # Promokodni foydalanuvchiga saqlash
+    db.set_user_promocode(user_id, code)
+    
+    # Promokodni ishlatilgan deb belgilash (hozircha emas, buyurtma yaratilganda ishlatiladi)
+    # Faqat 1 martalik promokodlar uchun darhol belgilash
+    usage_type = promocode.get('usage_type', 'unlimited')
+    
+    if usage_type == "one_time":
+        # 1 martalik - bir kishi ishlatgandan keyin o'chib ketadi
+        db.mark_promocode_as_used(promocode['id'], user_id)
+        # Promokodni darhol o'chirmaslik, buyurtma yaratilganda o'chiriladi
+    elif usage_type == "per_user":
+        # Har bir foydalanuvchi 1 marta - buyurtma yaratilganda belgilanadi
+        pass
+    # unlimited uchun hech narsa qilmaymiz
+    
+    work_type_name = "Kurs ishi" if promocode['work_type'] == "kurs_ishi" else "Maqola"
     
     await message.answer(
-        f"✅ Promokod qabul qilindi!\n\n"
+        f"{message_text}\n\n"
         f"🎁 Kod: {code}\n"
-        f"📝 Turi: {promocode['work_type']}\n"
+        f"📝 Turi: {work_type_name}\n"
         f"💰 Chegirma: {promocode['discount_percent']}%\n\n"
         f"Keyingi buyurtmangizda bu chegirma avtomatik qo'llaniladi!",
         reply_markup=get_main_menu()
@@ -845,7 +1021,7 @@ async def process_promocode(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith("accept_service_"))
 async def accept_service_callback(callback: CallbackQuery, state: FSMContext):
-    """Xizmatni qabul qilish - balans tekshiruvi"""
+    """Xizmatni qabul qilish - balans tekshiruvi va promokod tekshiruvi"""
     service_type = callback.data.split("_")[-1]
     telegram_id = callback.from_user.id
     user = db.get_user(telegram_id)
@@ -853,35 +1029,73 @@ async def accept_service_callback(callback: CallbackQuery, state: FSMContext):
     if service_type == "kurs":
         price = int(db.get_setting("kurs_ishi_price", "50000"))
         service_name = "Kurs ishi"
+        work_type = "kurs_ishi"
     else:
         price = int(db.get_setting("maqola_price", "30000"))
         service_name = "Maqola"
+        work_type = "maqola"
     
-    # Balans tekshiruvi
+    original_price = price
+    discount_amount = 0
+    promocode_info = ""
+    
+    # Foydalanuvchining aktiv promokodini tekshirish
+    if user.get('active_promocode'):
+        promocode = db.get_promocode(user['active_promocode'])
+        if promocode and promocode['work_type'] == work_type:
+            # Promokodni yana bir bor tekshirish (ishlatish mumkinligini)
+            can_use, _ = db.can_use_promocode(user['active_promocode'], telegram_id)
+            if can_use:
+                discount_percent = promocode['discount_percent']
+                discount_amount = int(price * discount_percent / 100)
+                price = price - discount_amount
+                promocode_info = f"\n\n🎁 **Promokod qo'llandi!**\n💰 Asl narx: {original_price:,} so'm\n🎁 Chegirma: {discount_amount:,} so'm ({discount_percent}%)\n✅ Yakuniy narx: {price:,} so'm"
+    
+    # Balans tekshiruvi (chegirmadan keyingi narx bilan)
     if user['balance'] >= price:
         # Balans yetarli - FSM boshlash
         await callback.answer()
         if service_type == "kurs":
             await callback.message.answer(
-                "📚 Kurs ishi tayyorlash boshlandi!\n\n"
+                f"📚 Kurs ishi tayyorlash boshlandi!{promocode_info}\n\n"
                 "👤 F.I.Sh. (to'liq ismingiz) kiriting:\n\n"
-                "Masalan: Abdullayev Akmal Rustamovich",
-                reply_markup=get_cancel_button()
+                "Masalan: Alisherov Alisher Alisherovich",
+                reply_markup=get_cancel_button(),
+                parse_mode="Markdown"
+            )
+            # Promokod ma'lumotlarini state'ga saqlash (har doim saqlash, chegirma bo'lsa ham bo'lmasa ham)
+            await state.update_data(
+                original_price=original_price, 
+                discount_amount=discount_amount, 
+                promocode_used=user.get('active_promocode') if discount_amount > 0 else None,
+                final_price=price  # Yakuniy narxni ham saqlaymiz
             )
             await state.set_state(UserStates.waiting_for_kurs_fish)
         else:
             await callback.message.answer(
-                "📝 Maqola mavzusini kiriting:\n\n"
+                f"📝 Maqola mavzusini kiriting:{promocode_info}\n\n"
                 "Masalan: Raqamli iqtisodiyotda blockchain texnologiyasining o'rni",
-                reply_markup=get_cancel_button()
+                reply_markup=get_cancel_button(),
+                parse_mode="Markdown"
+            )
+            # Promokod ma'lumotlarini state'ga saqlash (har doim saqlash, chegirma bo'lsa ham bo'lmasa ham)
+            await state.update_data(
+                original_price=original_price, 
+                discount_amount=discount_amount, 
+                promocode_used=user.get('active_promocode') if discount_amount > 0 else None,
+                final_price=price  # Yakuniy narxni ham saqlaymiz
             )
             await state.set_state(UserStates.waiting_for_maqola_topic)
     else:
         # Balans yetarli emas
         needed = price - user['balance']
         await callback.answer()
+        discount_text = ""
+        if discount_amount > 0:
+            discount_text = f"\n🎁 Promokod qo'llandi!\n💵 Asl narx: {original_price:,} so'm\n🎁 Chegirma: {discount_amount:,} so'm\n✅ Yakuniy narx: {price:,} so'm\n"
         await callback.message.answer(
             f"⚠️ **Balans yetarli emas!**\n\n"
+            f"{discount_text}"
             f"💰 Hozirgi balans: {user['balance']:,} so'm\n"
             f"💵 Xizmat narxi: {price:,} so'm\n"
             f"❌ Yetmayapti: {needed:,} so'm\n\n"
@@ -980,9 +1194,24 @@ async def word_to_pdf_handler(message: Message, state: FSMContext):
     )
     await state.set_state(UserStates.waiting_for_word_file)
 
-@router.message(UserStates.waiting_for_word_file, F.document)
+@router.message(UserStates.waiting_for_word_file)
 async def process_word_file_for_pdf(message: Message, state: FSMContext, bot):
-    """Word faylni qabul qilib PDF qilish"""
+    """Word faylni qabul qilib PDF qilish yoki bekor qilish"""
+    # Bekor qilish tugmasi
+    if message.text == "❌ Bekor qilish":
+        await state.clear()
+        await message.answer("Bekor qilindi.", reply_markup=get_main_menu())
+        return
+    
+    # Faqat document'larni qabul qilish
+    if not message.document:
+        await message.answer(
+            "❌ Iltimos, Word (.docx) fayl yuboring.\n\n"
+            "📎 Faylni yuborish uchun pastdagi 📎 tugmasini bosing.",
+            reply_markup=get_cancel_button()
+        )
+        return
+    
     try:
         document = message.document
         

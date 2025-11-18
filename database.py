@@ -11,7 +11,11 @@ class Database:
         self.init_db()
     
     def get_connection(self):
-        return sqlite3.connect(self.db_name)
+        """Database connection olish (timeout bilan)"""
+        conn = sqlite3.connect(self.db_name, timeout=10.0)
+        # WAL mode yoqish - parallel write operatsiyalarini qo'llab-quvvatlash uchun
+        conn.execute("PRAGMA journal_mode=WAL")
+        return conn
     
     def init_db(self):
         """Ma'lumotlar bazasini yaratish"""
@@ -35,6 +39,13 @@ class Database:
         # Eski foydalanuvchilar uchun is_blocked ustunini qo'shish (agar mavjud bo'lmasa)
         try:
             cursor.execute("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+        
+        # Eski foydalanuvchilar uchun active_promocode ustunini qo'shish
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN active_promocode TEXT DEFAULT NULL")
             conn.commit()
         except sqlite3.OperationalError:
             pass
@@ -126,7 +137,12 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
+        # Aniq ustun nomlarini ishlatamiz
+        cursor.execute("""
+            SELECT id, telegram_id, username, full_name, balance, referal_code, invited_by, register_date, is_blocked, active_promocode 
+            FROM users 
+            WHERE telegram_id = ?
+        """, (telegram_id,))
         row = cursor.fetchone()
         conn.close()
         
@@ -140,9 +156,44 @@ class Database:
                 "referal_code": row[5],
                 "invited_by": row[6],
                 "register_date": row[7],
-                "is_blocked": row[8]
+                "is_blocked": row[8] if len(row) > 8 else 0,
+                "active_promocode": row[9] if len(row) > 9 else None
             }
         return None
+    
+    def set_user_promocode(self, telegram_id: int, promocode_code: str) -> bool:
+        """Foydalanuvchining aktiv promokodini saqlash"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE users SET active_promocode = ? WHERE telegram_id = ?
+            """, (promocode_code, telegram_id))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Foydalanuvchi promokodini saqlashda xatolik: {e}")
+            return False
+    
+    def clear_user_promocode(self, telegram_id: int) -> bool:
+        """Foydalanuvchining aktiv promokodini o'chirish"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE users SET active_promocode = NULL WHERE telegram_id = ?
+            """, (telegram_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Foydalanuvchi promokodini o'chirishda xatolik: {e}")
+            return False
     
     def update_user_info(self, telegram_id: int, username: str, full_name: str) -> bool:
         """Foydalanuvchi ma'lumotlarini yangilash"""
@@ -251,6 +302,7 @@ class Database:
     
     def add_promocode(self, code: str, work_type: str, discount_percent: int, expiry_date: str = None, usage_type: str = "unlimited") -> bool:
         """Promokod qo'shish"""
+        conn = None
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
@@ -261,17 +313,30 @@ class Database:
             """, (code, work_type, discount_percent, expiry_date, usage_type))
             
             conn.commit()
-            conn.close()
             return True
         except sqlite3.IntegrityError:
             return False
+        except sqlite3.OperationalError as e:
+            logger.error(f"Promokod qo'shishda xatolik (database locked): {e}")
+            return False
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except:
+                    pass
     
     def get_promocode(self, code: str) -> Optional[Dict[str, Any]]:
         """Promokod ma'lumotlarini olish"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT * FROM promocodes WHERE code = ? AND active = 1", (code,))
+        # Aniq ustun nomlarini ishlatamiz
+        cursor.execute("""
+            SELECT id, code, work_type, discount_percent, usage_type, used_by, expiry_date, active 
+            FROM promocodes 
+            WHERE code = ? AND active = 1
+        """, (code,))
         row = cursor.fetchone()
         conn.close()
         
@@ -281,19 +346,112 @@ class Database:
                 "code": row[1],
                 "work_type": row[2],
                 "discount_percent": row[3],
-                "expiry_date": row[4] if len(row) > 4 else None,
-                "active": row[5] if len(row) > 5 else 1,
-                "usage_type": row[6] if len(row) > 6 else "unlimited",
-                "used_by": row[7] if len(row) > 7 else "[]"
+                "usage_type": row[4] if row[4] else "unlimited",
+                "used_by": row[5] if row[5] else "[]",
+                "expiry_date": row[6] if row[6] else None,
+                "active": row[7] if row[7] is not None else 1
             }
         return None
+    
+    def can_use_promocode(self, code: str, user_id: int) -> tuple[bool, str]:
+        """Promokodni ishlatish mumkinligini tekshirish"""
+        import json
+        
+        promocode = self.get_promocode(code)
+        if not promocode:
+            return False, "❌ Bunday promokod topilmadi yoki muddati tugagan."
+        
+        # Muddati tekshirish
+        if promocode['expiry_date']:
+            from datetime import datetime
+            expiry = datetime.strptime(promocode['expiry_date'], "%Y-%m-%d")
+            if expiry < datetime.now():
+                return False, "❌ Promokod muddati tugagan."
+        
+        usage_type = promocode.get('usage_type', 'unlimited')
+        used_by_str = promocode.get('used_by', '[]')
+        
+        try:
+            used_by = json.loads(used_by_str) if used_by_str else []
+        except:
+            used_by = []
+        
+        # 1 martalik - bir kishi ishlatgandan keyin o'chib ketadi
+        if usage_type == "one_time":
+            if len(used_by) > 0:
+                return False, "❌ Bu promokod allaqachon ishlatilgan."
+            return True, "✅ Promokod qabul qilindi!"
+        
+        # Har bir foydalanuvchi 1 marta
+        elif usage_type == "per_user":
+            if user_id in used_by:
+                return False, "❌ Siz bu promokodni allaqachon ishlatgansiz."
+            return True, "✅ Promokod qabul qilindi!"
+        
+        # Cheksiz
+        elif usage_type == "unlimited":
+            return True, "✅ Promokod qabul qilindi!"
+        
+        return False, "❌ Noma'lum xatolik."
+    
+    def mark_promocode_as_used(self, promo_id: int, user_id: int = None):
+        """Promokodni ishlatilgan deb belgilash"""
+        import json
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Joriy used_by ni olish
+        cursor.execute("SELECT used_by FROM promocodes WHERE id = ?", (promo_id,))
+        row = cursor.fetchone()
+        
+        if row:
+            used_by_str = row[0] if row[0] else '[]'
+            try:
+                used_by = json.loads(used_by_str) if used_by_str else []
+            except:
+                used_by = []
+            
+            # Foydalanuvchi ID ni qo'shish (agar berilgan bo'lsa)
+            if user_id and user_id not in used_by:
+                used_by.append(user_id)
+            
+            # Yangilash
+            cursor.execute(
+                "UPDATE promocodes SET used_by = ? WHERE id = ?",
+                (json.dumps(used_by), promo_id)
+            )
+            
+            conn.commit()
+        
+        conn.close()
+    
+    def deactivate_promocode(self, promo_id: int):
+        """Promokodni o'chirish (active = 0)"""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("UPDATE promocodes SET active = 0 WHERE id = ?", (promo_id,))
+            
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Promokodni o'chirishda xatolik: {e}")
+            return False
     
     def get_all_promocodes(self) -> list:
         """Barcha promokodlarni olish"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT * FROM promocodes ORDER BY id DESC")
+        # Aniq ustun nomlarini ishlatamiz
+        cursor.execute("""
+            SELECT id, code, work_type, discount_percent, usage_type, used_by, expiry_date, active 
+            FROM promocodes 
+            ORDER BY id DESC
+        """)
         rows = cursor.fetchall()
         conn.close()
         
@@ -304,10 +462,10 @@ class Database:
                 "code": row[1],
                 "work_type": row[2],
                 "discount_percent": row[3],
-                "expiry_date": row[4] if len(row) > 4 else None,
-                "active": row[5] if len(row) > 5 else 1,
-                "usage_type": row[6] if len(row) > 6 else "unlimited",
-                "used_by": row[7] if len(row) > 7 else "[]"
+                "usage_type": row[4] if row[4] else "unlimited",
+                "used_by": row[5] if row[5] else "[]",
+                "expiry_date": row[6] if row[6] else None,
+                "active": row[7] if row[7] is not None else 1
             })
         
         return promocodes
