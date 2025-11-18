@@ -1329,7 +1329,6 @@ async def convert_to_pdf_callback(callback: CallbackQuery):
             )
     
     except Exception as e:
-        import subprocess
         if isinstance(e, subprocess.TimeoutExpired):
             await callback.message.answer(
                 "❌ PDF yaratish juda uzoq davom etdi.\n\n"
@@ -1483,7 +1482,6 @@ async def process_word_file_for_pdf(message: Message, state: FSMContext, bot):
             logger.error(f"Fayllarni o'chirishda xatolik: {e}")
         
     except Exception as e:
-        import subprocess
         if isinstance(e, subprocess.TimeoutExpired):
             await message.answer(
                 "❌ PDF yaratish juda uzoq davom etdi.\n\n"
