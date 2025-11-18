@@ -7,6 +7,9 @@ from datetime import datetime
 import logging
 import asyncio
 import os
+import platform
+import shutil
+import subprocess
 from utils.timezone import get_tashkent_time, format_datetime_tashkent
 
 from database import Database
@@ -23,6 +26,91 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 db = Database()
+
+def find_libreoffice():
+    """LibreOffice'ni topish - barcha mumkin bo'lgan yo'llarni tekshirish"""
+    # Windows uchun
+    if platform.system() == 'Windows':
+        possible_paths = [
+            r'C:\Program Files\LibreOffice\program\soffice.exe',
+            r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
+            'soffice.exe',
+            'libreoffice'
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+            # PATH'da tekshirish
+            found = shutil.which(path)
+            if found:
+                return found
+    else:
+        # Linux/Mac uchun - nixpacks va boshqa o'rnatishlar uchun
+        possible_paths = [
+            'libreoffice',  # PATH'da
+            '/usr/bin/libreoffice',
+            '/usr/local/bin/libreoffice',
+            '/nix/store/*/bin/libreoffice',  # Nix/Nixpacks uchun
+            '/app/.nix-profile/bin/libreoffice',  # Railway Nixpacks uchun
+            '~/.nix-profile/bin/libreoffice',
+        ]
+        
+        # PATH'da tekshirish
+        found = shutil.which('libreoffice')
+        if found:
+            return found
+        
+        # To'g'ridan-to'g'ri yo'llarni tekshirish
+        for path in possible_paths:
+            # Nix store uchun wildcard pattern
+            if '*' in path:
+                import glob
+                matches = glob.glob(path)
+                if matches:
+                    return matches[0]
+            else:
+                expanded_path = os.path.expanduser(path)
+                if os.path.exists(expanded_path) and os.access(expanded_path, os.X_OK):
+                    return expanded_path
+        
+        # Nixpacks o'rnatgan bo'lsa, nix-store orqali topish
+        try:
+            import glob
+            # Nix store'dan to'g'ridan-to'g'ri qidirish
+            nix_paths = glob.glob('/nix/store/*/bin/libreoffice')
+            for nix_path in nix_paths:
+                if os.path.exists(nix_path) and os.access(nix_path, os.X_OK):
+                    return nix_path
+        except:
+            pass
+        
+        # Railway Nixpacks uchun - .nix-profile orqali
+        try:
+            nix_profile_paths = [
+                '/app/.nix-profile/bin/libreoffice',
+                os.path.expanduser('~/.nix-profile/bin/libreoffice'),
+            ]
+            for profile_path in nix_profile_paths:
+                if os.path.exists(profile_path) and os.access(profile_path, os.X_OK):
+                    return profile_path
+        except:
+            pass
+        
+        # Oxirgi urinish - direkt ishga tushirish (PATH'da bo'lsa)
+        try:
+            result = subprocess.run(
+                ['libreoffice', '--version'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                return 'libreoffice'
+        except:
+            pass
+    
+    return None
 
 # Majburiy obuna tekshirish funksiyasi
 async def check_subscription(bot, user_id: int, channel_id: str) -> bool:
@@ -1139,60 +1227,28 @@ async def convert_to_pdf_callback(callback: CallbackQuery):
         # PDF fayl nomi
         pdf_path = file_path.replace('.docx', '.pdf')
         
-        # LibreOffice orqali PDF ga o'tkazish
-        import subprocess
-        
         output_dir = os.path.dirname(file_path)
         
-        # LibreOffice yo'lini topish
-        import platform
-        import shutil
-        
-        libreoffice_path = None
-        
-        # Windows uchun LibreOffice yo'lni topish
-        if platform.system() == 'Windows':
-            possible_paths = [
-                r'C:\Program Files\LibreOffice\program\soffice.exe',
-                r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
-                'soffice.exe',  # PATH'da bo'lsa
-                'libreoffice'  # PATH'da bo'lsa
-            ]
-            
-            for path in possible_paths:
-                if os.path.exists(path):
-                    libreoffice_path = path
-                    break
-                # PATH'da tekshirish
-                if shutil.which(path):
-                    libreoffice_path = path
-                    break
-        else:
-            # Linux/Mac uchun
-            libreoffice_path = shutil.which('libreoffice') or 'libreoffice'
+        # LibreOffice'ni topish
+        libreoffice_path = find_libreoffice()
         
         # PDF ga o'tkazish
-        import subprocess
-        import platform
-        import shutil
-        
         # Linux/Mac'da docx2pdf ishlamaydi, shuning uchun LibreOffice ishlatamiz
         if platform.system() != 'Windows':
             # Linux/Mac uchun LibreOffice'ni ishlatish
-            libreoffice_path_linux = shutil.which('libreoffice') or 'libreoffice'
-            
-            if not libreoffice_path_linux or not shutil.which('libreoffice'):
+            if not libreoffice_path:
                 await callback.message.answer(
                     "❌ PDF yaratishda xatolik yuz berdi.\n\n"
-                    "PDF konvertatsiya uchun LibreOffice o'rnatilmagan.\n\n"
-                    "Iltimos, Railway'da LibreOffice'ni o'rnating."
+                    "Xatolik: PDF konvertatsiya uchun LibreOffice o'rnatilmagan.\n\n"
+                    "Iltimos, Railway'da LibreOffice'ni o'rnating:\n"
+                    "Railway environment'da LibreOffice package'ni qo'shing yoki Dockerfile'da o'rnating."
                 )
                 logger.error("LibreOffice topilmadi (Linux/Mac)")
                 return
             
             # LibreOffice CLI orqali konvertatsiya
             result = subprocess.run(
-                [libreoffice_path_linux, '--headless', '--convert-to', 'pdf', '--outdir', output_dir, file_path],
+                [libreoffice_path, '--headless', '--convert-to', 'pdf', '--outdir', output_dir, file_path],
                 capture_output=True,
                 text=True,
                 timeout=60
@@ -1353,16 +1409,13 @@ async def process_word_file_for_pdf(message: Message, state: FSMContext, bot):
         # PDF ga o'tkazish
         pdf_path = docx_path.replace('.docx', '.pdf')
         
-        import subprocess
-        import platform
-        import shutil
+        # LibreOffice'ni topish
+        libreoffice_path = find_libreoffice()
         
         # Linux/Mac'da docx2pdf ishlamaydi, shuning uchun LibreOffice ishlatamiz
         if platform.system() != 'Windows':
             # Linux/Mac uchun LibreOffice'ni ishlatish
-            libreoffice_path = shutil.which('libreoffice') or 'libreoffice'
-            
-            if not libreoffice_path or not shutil.which('libreoffice'):
+            if not libreoffice_path:
                 raise Exception(
                     "PDF konvertatsiya uchun LibreOffice o'rnatilmagan.\n\n"
                     "Iltimos, Railway'da LibreOffice'ni o'rnating:\n"
@@ -1387,25 +1440,6 @@ async def process_word_file_for_pdf(message: Message, state: FSMContext, bot):
                 convert(docx_path, pdf_path)
             except (ImportError, NotImplementedError):
                 # docx2pdf o'rnatilmagan yoki ishlamaydi - LibreOffice'ga yonaltirish
-                libreoffice_path = None
-                
-                # Windows uchun LibreOffice yo'lni topish
-                possible_paths = [
-                    r'C:\Program Files\LibreOffice\program\soffice.exe',
-                    r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
-                    'soffice.exe',  # PATH'da bo'lsa
-                    'libreoffice'  # PATH'da bo'lsa
-                ]
-                
-                for path in possible_paths:
-                    if os.path.exists(path):
-                        libreoffice_path = path
-                        break
-                    # PATH'da tekshirish
-                    if shutil.which(path):
-                        libreoffice_path = path
-                        break
-                
                 if not libreoffice_path:
                     raise Exception(
                         "PDF konvertatsiya uchun kerakli kutubxonalar topilmadi.\n\n"
