@@ -4,6 +4,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
+from utils.timezone import format_datetime_tashkent
 import logging
 
 from database import Database
@@ -257,7 +258,7 @@ async def statistics(message: Message):
         f"🧾 Kurs ishlari: {stats['kurs_ishlari']}\n"
         f"📰 Maqolalar: {stats['maqolalar']}\n"
         f"📝 Jami buyurtmalar: {stats['total_orders']}\n\n"
-        f"📅 Sana: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        f"📅 Sana: {format_datetime_tashkent('%Y-%m-%d %H:%M')}"
     )
 
 @router.message(F.text == "🤝 Referal sozlamalari")

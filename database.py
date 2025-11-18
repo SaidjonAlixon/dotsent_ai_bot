@@ -2,6 +2,7 @@ import sqlite3
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from utils.timezone import get_tashkent_time
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ class Database:
             cursor = conn.cursor()
             
             referal_code = f"REF{telegram_id}"
-            register_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            register_date = get_tashkent_time().strftime("%Y-%m-%d %H:%M:%S")
             
             cursor.execute("""
             INSERT INTO users (telegram_id, username, full_name, referal_code, invited_by, register_date)
@@ -234,7 +235,7 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at = get_tashkent_time().strftime("%Y-%m-%d %H:%M:%S")
         
         cursor.execute("""
         INSERT INTO orders (user_id, type, topic, price, file_link, created_at)
@@ -251,7 +252,7 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at = get_tashkent_time().strftime("%Y-%m-%d %H:%M:%S")
         
         cursor.execute("""
         INSERT INTO payments (user_id, amount, status, check_photo_link, created_at)
@@ -365,7 +366,7 @@ class Database:
         if promocode['expiry_date']:
             from datetime import datetime
             expiry = datetime.strptime(promocode['expiry_date'], "%Y-%m-%d")
-            if expiry < datetime.now():
+            if expiry.date() < get_tashkent_time().date():
                 return False, "❌ Promokod muddati tugagan."
         
         usage_type = promocode.get('usage_type', 'unlimited')
