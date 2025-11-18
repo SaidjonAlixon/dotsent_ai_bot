@@ -1139,16 +1139,79 @@ async def convert_to_pdf_callback(callback: CallbackQuery):
         
         output_dir = os.path.dirname(file_path)
         
-        # LibreOffice CLI orqali konvertatsiya
-        result = subprocess.run(
-            ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, file_path],
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
+        # LibreOffice yo'lini topish
+        import platform
+        import shutil
         
-        if result.returncode == 0 and os.path.exists(pdf_path):
-            # PDF faylni yuborish
+        libreoffice_path = None
+        
+        # Windows uchun LibreOffice yo'lni topish
+        if platform.system() == 'Windows':
+            possible_paths = [
+                r'C:\Program Files\LibreOffice\program\soffice.exe',
+                r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
+                'soffice.exe',  # PATH'da bo'lsa
+                'libreoffice'  # PATH'da bo'lsa
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    libreoffice_path = path
+                    break
+                # PATH'da tekshirish
+                if shutil.which(path):
+                    libreoffice_path = path
+                    break
+        else:
+            # Linux/Mac uchun
+            libreoffice_path = shutil.which('libreoffice') or 'libreoffice'
+        
+        # PDF ga o'tkazish - docx2pdf kutubxonasidan foydalanish
+        try:
+            # python-docx2pdf kutubxonasidan foydalanish
+            from docx2pdf import convert
+            convert(file_path, pdf_path)
+        except ImportError:
+            # docx2pdf o'rnatilmagan - LibreOffice'ga yonaltirish
+            if not libreoffice_path:
+                await callback.message.answer(
+                    "❌ PDF yaratishda xatolik yuz berdi.\n\n"
+                    "PDF konvertatsiya uchun kerakli kutubxonalar topilmadi.\n\n"
+                    "Iltimos, quyidagilardan birini o'rnating:\n"
+                    "1. docx2pdf: pip install docx2pdf\n"
+                    "2. LibreOffice: https://www.libreoffice.org/download/"
+                )
+                logger.error("LibreOffice topilmadi va docx2pdf o'rnatilmagan")
+                return
+            
+            # LibreOffice CLI orqali konvertatsiya
+            result = subprocess.run(
+                [libreoffice_path, '--headless', '--convert-to', 'pdf', '--outdir', output_dir, file_path],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode != 0 or not os.path.exists(pdf_path):
+                # Agar LibreOffice ishlamasa
+                await callback.message.answer(
+                    "❌ PDF yaratishda xatolik yuz berdi.\n\n"
+                    f"Xatolik: {result.stderr}\n\n"
+                    "Iltimos, DOCX faylni kompyuteringizda Word orqali oching va "
+                    "\"Save As\" → \"PDF\" orqali PDF qiling."
+                )
+                logger.error(f"PDF conversion failed: {result.stderr}")
+                return
+        except Exception as e:
+            await callback.message.answer(
+                "❌ PDF yaratishda xatolik yuz berdi.\n\n"
+                f"Xatolik: {str(e)}"
+            )
+            logger.error(f"PDF conversion failed: {e}")
+            return
+        
+        # PDF faylni yuborish
+        if os.path.exists(pdf_path):
             pdf_file = FSInputFile(pdf_path)
             await callback.message.answer_document(
                 document=pdf_file,
@@ -1161,13 +1224,11 @@ async def convert_to_pdf_callback(callback: CallbackQuery):
             except:
                 pass
         else:
-            # Agar LibreOffice ishlamasa
             await callback.message.answer(
                 "❌ PDF yaratishda xatolik yuz berdi.\n\n"
                 "Iltimos, DOCX faylni kompyuteringizda Word orqali oching va "
                 "\"Save As\" → \"PDF\" orqali PDF qiling."
             )
-            logger.error(f"PDF conversion failed: {result.stderr}")
     
     except subprocess.TimeoutExpired:
         await callback.message.answer(
@@ -1244,19 +1305,62 @@ async def process_word_file_for_pdf(message: Message, state: FSMContext, bot):
         
         await bot.download(document, destination=docx_path)
         
-        # PDF ga o'tkazish
+        # PDF ga o'tkazish - docx2pdf kutubxonasidan foydalanish
         pdf_path = docx_path.replace('.docx', '.pdf')
         
-        import subprocess
-        result = subprocess.run(
-            ['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', 'generated_files', docx_path],
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
-        
-        if result.returncode != 0 or not os.path.exists(pdf_path):
-            raise Exception(f"PDF konvertatsiya xatolik: {result.stderr}")
+        try:
+            # python-docx2pdf kutubxonasidan foydalanish
+            from docx2pdf import convert
+            convert(docx_path, pdf_path)
+        except ImportError:
+            # docx2pdf o'rnatilmagan - LibreOffice'ga yonaltirish
+            import subprocess
+            import platform
+            import shutil
+            
+            libreoffice_path = None
+            
+            # Windows uchun LibreOffice yo'lni topish
+            if platform.system() == 'Windows':
+                possible_paths = [
+                    r'C:\Program Files\LibreOffice\program\soffice.exe',
+                    r'C:\Program Files (x86)\LibreOffice\program\soffice.exe',
+                    'soffice.exe',  # PATH'da bo'lsa
+                    'libreoffice'  # PATH'da bo'lsa
+                ]
+                
+                for path in possible_paths:
+                    if os.path.exists(path):
+                        libreoffice_path = path
+                        break
+                    # PATH'da tekshirish
+                    if shutil.which(path):
+                        libreoffice_path = path
+                        break
+            else:
+                # Linux/Mac uchun
+                libreoffice_path = shutil.which('libreoffice') or 'libreoffice'
+            
+            if not libreoffice_path:
+                raise Exception(
+                    "PDF konvertatsiya uchun kerakli kutubxonalar topilmadi.\n\n"
+                    "Iltimos, quyidagilardan birini o'rnating:\n"
+                    "1. docx2pdf: pip install docx2pdf\n"
+                    "2. LibreOffice: https://www.libreoffice.org/download/"
+                )
+            
+            # LibreOffice orqali konvertatsiya
+            result = subprocess.run(
+                [libreoffice_path, '--headless', '--convert-to', 'pdf', '--outdir', 'generated_files', docx_path],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode != 0 or not os.path.exists(pdf_path):
+                raise Exception(f"PDF konvertatsiya xatolik: {result.stderr}")
+        except Exception as e:
+            raise Exception(f"PDF konvertatsiya xatolik: {str(e)}")
         
         # PDF faylni yuborish
         pdf_file = FSInputFile(pdf_path)

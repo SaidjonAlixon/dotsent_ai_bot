@@ -69,10 +69,12 @@ async def generate_course_work(user_data):
     # REJA ni alohida thread'da yaratish (blocking'dan qochish)
     loop = asyncio.get_event_loop()
     plan_content = await loop.run_in_executor(None, generate_plan, subject, topic)
-    sections.append({'type': 'plan', 'content': plan_content})
     
     # REJA dan sarlavhalarni ajratib olish
     plan_titles = parse_plan(plan_content)
+    
+    # Mundarejani 2-betda qo'yish (toc - title_page'dan keyin)
+    sections.append({'type': 'toc', 'content': plan_content})
 
     # ANNOTATSIYA ni 3 tilda yaratish (O'zbek, Ingliz, Rus)
     annotation_uzbek = await generate_section_with_ai(
@@ -104,9 +106,9 @@ async def generate_course_work(user_data):
         f"2. Методологию исследования\n"
         f"3. Основные результаты и выводы\n"
         f"4. Научное и практическое значение исследования\n\n"
-        f"Аннотация должна быть краткой, четкой и профессиональной (примерно 150-200 слов). "
+        f"Аннотация должна быть краткой, четкой и профессиональной (примерно 100-150 слов). "
         f"Текст должен быть написан в научном стиле, непрерывно.",
-        max_words=250)
+        max_words=200)
     
     sections.append({
         'type': 'annotation',
@@ -251,9 +253,6 @@ async def generate_course_work(user_data):
     # ILOVALAR ni AI orqali yaratish
     appendix_content = await generate_appendix(subject, topic)
     sections.append({'type': 'appendix', 'content': appendix_content})
-    
-    toc_content = plan_content
-    sections.append({'type': 'toc', 'content': toc_content})
 
     return sections
 
