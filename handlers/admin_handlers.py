@@ -15,7 +15,18 @@ import config
 logger = logging.getLogger(__name__)
 
 router = Router()
-db = Database()
+
+# PostgreSQL database connection
+try:
+    db = Database()
+    logger.info("PostgreSQL database admin_handlers uchun tayyor")
+except ValueError as e:
+    logger.error(f"Database xatolik: {e}")
+    logger.error("Iltimos, .env fayliga DATABASE_URL qo'shing.")
+    db = None
+except Exception as e:
+    logger.error(f"Database ulanishda xatolik: {e}")
+    db = None
 
 class AdminStates(StatesGroup):
     waiting_for_broadcast_message = State()

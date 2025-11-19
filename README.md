@@ -32,6 +32,7 @@ Bu bot foydalanuvchilarga AI yordamida kurs ishi va maqola tayyorlashda yordam b
 BOT_TOKEN=sizning_bot_tokeningiz
 OPENAI_API_KEY=sizning_openai_api_keyingiz
 ADMIN_ID=sizning_telegram_id_ingiz
+DATABASE_URL=postgresql://user:password@host:port/database
 KURS_ISHLARI_CHANNEL_ID=-100xxxxxxxxx
 MAQOLALAR_CHANNEL_ID=-100xxxxxxxxx
 TOLOV_TASDIQLASH_CHANNEL_ID=-100xxxxxxxxx
@@ -68,13 +69,39 @@ python main.py
 
 ## Ma'lumotlar bazasi
 
-Bot SQLite dan foydalanadi. Quyidagi jadvallar yaratiladi:
+Bot PostgreSQL dan foydalanadi. Quyidagi jadvallar yaratiladi:
 
 - `users` - foydalanuvchilar
 - `orders` - buyurtmalar (kurs ishlari va maqolalar)
 - `payments` - to'lovlar
 - `promocodes` - promokodlar
 - `settings` - sozlamalar
+
+### PostgreSQL Database Yaratish
+
+**Railway'da:**
+1. Railway Dashboard → **+ New** → **Database** → **PostgreSQL**
+2. Database yaratilgandan keyin, **Variables** tab'ga o'ting
+3. `DATABASE_URL` ni ko'ring va nusxalang
+4. Environment variable sifatida qo'shing
+
+**Yoki mahalliy:**
+```bash
+# PostgreSQL o'rnatish (Linux)
+sudo apt-get install postgresql postgresql-contrib
+
+# Database yaratish
+sudo -u postgres psql
+CREATE DATABASE bot_database;
+CREATE USER bot_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE bot_database TO bot_user;
+\q
+```
+
+Keyin `.env` fayliga qo'shing:
+```env
+DATABASE_URL=postgresql://bot_user:your_password@localhost:5432/bot_database
+```
 
 ## Xususiyatlar
 
@@ -102,7 +129,7 @@ Har bir foydalanuvchi o'zining referal havolasiga ega. Do'stlarni taklif qilgand
 - **Til**: Python 3.11
 - **Framework**: Aiogram 3.x
 - **AI**: OpenAI GPT-4
-- **Database**: SQLite
+- **Database**: PostgreSQL (psycopg2)
 - **Fayl formati**: DOCX (python-docx)
 
 ## Yordam

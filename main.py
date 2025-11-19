@@ -24,7 +24,11 @@ class BanCheckMiddleware(BaseMiddleware):
     
     def __init__(self):
         super().__init__()
-        self.db = Database()
+        try:
+            self.db = Database()
+        except Exception as e:
+            logger.error(f"Database middleware'da xatolik: {e}")
+            self.db = None
     
     async def __call__(
         self,
@@ -42,7 +46,7 @@ class BanCheckMiddleware(BaseMiddleware):
             return await handler(event, data)
         
         # Foydalanuvchi cheklangan yoki yo'qligini tekshirish
-        if self.db.is_user_banned(user_id):
+        if self.db and self.db.is_user_banned(user_id):
             if isinstance(event, Message):
                 await event.answer(
                     "🚫 **Sizning botdan foydalanish huquqingiz yo'q.**\n\n"
@@ -70,8 +74,19 @@ async def main():
     
     logger.info("Bot ishga tushmoqda...")
     
-    db = Database()
-    logger.info("Ma'lumotlar bazasi tayyor")
+    # PostgreSQL database connection
+    try:
+        db = Database()
+        logger.info("PostgreSQL ma'lumotlar bazasi tayyor")
+    except ValueError as e:
+        logger.error(f"Database xatolik: {e}")
+        logger.error("Iltimos, .env fayliga DATABASE_URL qo'shing.")
+        logger.error("Masalan: DATABASE_URL=postgresql://user:password@host:port/database")
+        return
+    except Exception as e:
+        logger.error(f"Database ulanishda xatolik: {e}")
+        logger.error("Iltimos, PostgreSQL database'ni tekshiring va DATABASE_URL ni to'g'ri kiriting.")
+        return
     
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())

@@ -48,6 +48,10 @@ BOT_TOKEN=your_bot_token_here
 OPENAI_API_KEY=your_openai_key_here
 ADMIN_ID=your_telegram_id
 
+# Database (PostgreSQL)
+DATABASE_URL=postgresql://user:password@host:port/database
+# Yoki Railway PostgreSQL yaratganda avtomatik yaratiladi
+
 # Kanallar
 KURS_ISHLARI_CHANNEL_ID=your_channel_id
 MAQOLALAR_CHANNEL_ID=your_channel_id
@@ -113,13 +117,15 @@ Railway Dashboard → Your Project → **Settings** → **Delete Service**
 3. Bot token hali ham faol ekanini tekshiring (@BotFather)
 
 ### Database xatoligi?
-Railway `bot_database.db` ni avtomatik yaratadi, lekin...
-- Agar PostgreSQL kerak bo'lsa: Railway → **+ New** → **Database** → **PostgreSQL**
+Bot PostgreSQL ishlatadi. Railway'da PostgreSQL database yaratish:
+1. Railway Dashboard → **+ New** → **Database** → **PostgreSQL**
+2. Database yaratilgandan keyin, Railway avtomatik `DATABASE_URL` environment variable yaratadi
+3. Agar `DATABASE_URL` topilmasa, manual qo'shing
 
 ### Fayl tizimi xatoligi?
 Railway'da har bir deploy yangi container yaratadi, shuning uchun:
 - ✅ Fayllar yuborilgandan keyin **avtomatik o'chiriladi** (kod ichida)
-- ✅ SQLite database saqlanadi (Railway volume'da)
+- ✅ PostgreSQL database Railway'da alohida service sifatida saqlanadi
 
 ### Out of memory?
 - Railway default: 512MB RAM

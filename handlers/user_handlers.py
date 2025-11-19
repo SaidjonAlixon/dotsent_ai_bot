@@ -25,7 +25,18 @@ import config
 logger = logging.getLogger(__name__)
 
 router = Router()
-db = Database()
+
+# PostgreSQL database connection
+try:
+    db = Database()
+    logger.info("PostgreSQL database user_handlers uchun tayyor")
+except ValueError as e:
+    logger.error(f"Database xatolik: {e}")
+    logger.error("Iltimos, .env fayliga DATABASE_URL qo'shing.")
+    db = None
+except Exception as e:
+    logger.error(f"Database ulanishda xatolik: {e}")
+    db = None
 
 def find_libreoffice():
     """LibreOffice'ni topish - barcha mumkin bo'lgan yo'llarni tekshirish"""
@@ -127,6 +138,11 @@ async def check_subscription(bot, user_id: int, channel_id: str) -> bool:
 async def process_course_work_background(bot, telegram_id, user_data_for_ai, price, data):
     """Background da kurs ishini yaratish"""
     try:
+        if not db:
+            logger.error("Database topilmadi - kurs ishi yaratib bo'lmaydi")
+            await bot.send_message(telegram_id, "❌ Database xatolik. Iltimos, admin bilan bog'laning.")
+            return
+        
         sections = await generate_course_work(user_data_for_ai)
         
         filename = f"kurs_ishi_{telegram_id}_{get_tashkent_time().strftime('%Y%m%d_%H%M%S')}.docx"
@@ -298,6 +314,15 @@ async def cmd_start(message: Message, bot):
     username = message.from_user.username or ""
     full_name = message.from_user.full_name or "Foydalanuvchi"
     
+    # Database tekshirish
+    if not db:
+        await message.answer(
+            "❌ Database xatolik. Iltimos, admin bilan bog'laning.",
+            reply_markup=get_support_buttons(config.SUPPORT_GROUP_URL),
+            parse_mode="Markdown"
+        )
+        return
+    
     # Foydalanuvchi cheklangan yoki yo'qligini tekshirish
     if db.is_user_banned(telegram_id):
         await message.answer(
@@ -403,6 +428,10 @@ async def check_subscription_callback(callback: CallbackQuery, bot):
 @router.message(F.text == "🧾 Kurs ishi yozish")
 async def kurs_ishi_handler(message: Message, state: FSMContext):
     """Kurs ishi yozish - narx va ma'lumot"""
+    if not db:
+        await message.answer("❌ Database xatolik. Iltimos, admin bilan bog'laning.")
+        return
+    
     kurs_ishi_price = int(db.get_setting("kurs_ishi_price", "50000"))
     
     info_text = (
