@@ -18,18 +18,22 @@ class Database:
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable topilmadi! Iltimos, .env fayliga DATABASE_URL qo'shing.")
         
-        # Connection pool yaratish (ixtiyoriy, lekin tavsiya etiladi)
+        # Avval init_db'ni chaqirish (oddiy connection bilan)
+        # Keyin connection pool yaratish
+        self.pool = None
+        self.init_db()
+        
+        # Connection pool yaratish (init_db'dan keyin)
         try:
             self.pool = psycopg2.pool.SimpleConnectionPool(
                 minconn=1,
                 maxconn=10,
                 dsn=self.database_url
             )
+            logger.info("Connection pool muvaffaqiyatli yaratildi")
         except Exception as e:
-            logger.error(f"Connection pool yaratishda xatolik: {e}")
+            logger.warning(f"Connection pool yaratishda xatolik (oddiy connection ishlatiladi): {e}")
             self.pool = None
-        
-        self.init_db()
     
     def get_connection(self):
         """Database connection olish"""
@@ -45,117 +49,150 @@ class Database:
         else:
             conn.close()
     
+    def _table_exists(self, cursor, table_name: str) -> bool:
+        """Jadval mavjudligini tekshirish"""
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = %s
+            )
+        """, (table_name,))
+        return cursor.fetchone()[0]
+    
     def init_db(self):
         """Ma'lumotlar bazasini yaratish"""
-        conn = self.get_connection()
+        # Oddiy connection yaratish (pool'siz)
+        conn = psycopg2.connect(self.database_url)
+        # Autocommit mode'ni yoqish - har bir statement alohida commit bo'ladi
+        conn.autocommit = True
         cursor = conn.cursor()
         
         try:
-            # Users jadvali
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    telegram_id INTEGER UNIQUE NOT NULL,
-                    username VARCHAR(255),
-                    full_name VARCHAR(255),
-                    balance INTEGER DEFAULT 0,
-                    referal_code VARCHAR(255) UNIQUE,
-                    invited_by INTEGER,
-                    register_date TIMESTAMP NOT NULL,
-                    is_blocked INTEGER DEFAULT 0,
-                    active_promocode VARCHAR(255) DEFAULT NULL
-                )
-            """)
+            # Users jadvali - avval yaratish
+            if not self._table_exists(cursor, 'users'):
+                cursor.execute("""
+                    CREATE TABLE users (
+                        id SERIAL PRIMARY KEY,
+                        telegram_id INTEGER UNIQUE NOT NULL,
+                        username VARCHAR(255),
+                        full_name VARCHAR(255),
+                        balance INTEGER DEFAULT 0,
+                        referal_code VARCHAR(255) UNIQUE,
+                        invited_by INTEGER,
+                        register_date TIMESTAMP NOT NULL,
+                        is_blocked INTEGER DEFAULT 0,
+                        active_promocode VARCHAR(255) DEFAULT NULL
+                    )
+                """)
+                logger.info("Users jadvali yaratildi")
+            else:
+                logger.info("Users jadvali allaqachon mavjud")
             
             # Eski foydalanuvchilar uchun is_blocked ustunini qo'shish (agar mavjud bo'lmasa)
             try:
                 cursor.execute("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0")
-                conn.commit()
-            except psycopg2.ProgrammingError:
-                conn.rollback()
+                logger.info("Users jadvaliga is_blocked ustuni qo'shildi")
+            except psycopg2.ProgrammingError as e:
+                # Ustun allaqachon mavjud
                 pass
             
             # Eski foydalanuvchilar uchun active_promocode ustunini qo'shish
             try:
                 cursor.execute("ALTER TABLE users ADD COLUMN active_promocode VARCHAR(255) DEFAULT NULL")
-                conn.commit()
-            except psycopg2.ProgrammingError:
-                conn.rollback()
+                logger.info("Users jadvaliga active_promocode ustuni qo'shildi")
+            except psycopg2.ProgrammingError as e:
+                # Ustun allaqachon mavjud
                 pass
             
-            # Orders jadvali
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS orders (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    type VARCHAR(50) NOT NULL,
-                    topic TEXT NOT NULL,
-                    price INTEGER NOT NULL,
-                    file_link TEXT,
-                    created_at TIMESTAMP NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users (telegram_id)
-                )
-            """)
+            # Orders jadvali - users jadvali yaratilgandan keyin
+            if not self._table_exists(cursor, 'orders'):
+                cursor.execute("""
+                    CREATE TABLE orders (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        type VARCHAR(50) NOT NULL,
+                        topic TEXT NOT NULL,
+                        price INTEGER NOT NULL,
+                        file_link TEXT,
+                        created_at TIMESTAMP NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users (telegram_id)
+                    )
+                """)
+                logger.info("Orders jadvali yaratildi")
+            else:
+                logger.info("Orders jadvali allaqachon mavjud")
             
             # Payments jadvali
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS payments (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    amount INTEGER NOT NULL,
-                    status VARCHAR(50) DEFAULT 'pending',
-                    check_photo_link TEXT,
-                    created_at TIMESTAMP NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users (telegram_id)
-                )
-            """)
+            if not self._table_exists(cursor, 'payments'):
+                cursor.execute("""
+                    CREATE TABLE payments (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        amount INTEGER NOT NULL,
+                        status VARCHAR(50) DEFAULT 'pending',
+                        check_photo_link TEXT,
+                        created_at TIMESTAMP NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users (telegram_id)
+                    )
+                """)
+                logger.info("Payments jadvali yaratildi")
+            else:
+                logger.info("Payments jadvali allaqachon mavjud")
             
             # Promocodes jadvali
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS promocodes (
-                    id SERIAL PRIMARY KEY,
-                    code VARCHAR(255) UNIQUE NOT NULL,
-                    work_type VARCHAR(50) NOT NULL,
-                    discount_percent INTEGER NOT NULL,
-                    usage_type VARCHAR(50) DEFAULT 'unlimited',
-                    used_by TEXT DEFAULT '[]',
-                    expiry_date DATE,
-                    active INTEGER DEFAULT 1
-                )
-            """)
+            if not self._table_exists(cursor, 'promocodes'):
+                cursor.execute("""
+                    CREATE TABLE promocodes (
+                        id SERIAL PRIMARY KEY,
+                        code VARCHAR(255) UNIQUE NOT NULL,
+                        work_type VARCHAR(50) NOT NULL,
+                        discount_percent INTEGER NOT NULL,
+                        usage_type VARCHAR(50) DEFAULT 'unlimited',
+                        used_by TEXT DEFAULT '[]',
+                        expiry_date DATE,
+                        active INTEGER DEFAULT 1
+                    )
+                """)
+                logger.info("Promocodes jadvali yaratildi")
+            else:
+                logger.info("Promocodes jadvali allaqachon mavjud")
             
             # Eski promokodlar uchun yangi ustunlarni qo'shish
             try:
                 cursor.execute("ALTER TABLE promocodes ADD COLUMN usage_type VARCHAR(50) DEFAULT 'unlimited'")
-                conn.commit()
+                logger.info("Promocodes jadvaliga usage_type ustuni qo'shildi")
             except psycopg2.ProgrammingError:
-                conn.rollback()
                 pass
             
             try:
                 cursor.execute("ALTER TABLE promocodes ADD COLUMN used_by TEXT DEFAULT '[]'")
-                conn.commit()
+                logger.info("Promocodes jadvaliga used_by ustuni qo'shildi")
             except psycopg2.ProgrammingError:
-                conn.rollback()
                 pass
             
             # Settings jadvali
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS settings (
-                    key VARCHAR(255) PRIMARY KEY,
-                    value TEXT NOT NULL
-                )
-            """)
+            if not self._table_exists(cursor, 'settings'):
+                cursor.execute("""
+                    CREATE TABLE settings (
+                        key VARCHAR(255) PRIMARY KEY,
+                        value TEXT NOT NULL
+                    )
+                """)
+                logger.info("Settings jadvali yaratildi")
+            else:
+                logger.info("Settings jadvali allaqachon mavjud")
             
-            conn.commit()
-            logger.info("PostgreSQL ma'lumotlar bazasi muvaffaqiyatli yaratildi")
+            logger.info("PostgreSQL ma'lumotlar bazasi muvaffaqiyatli yaratildi/yoki mavjud")
         except Exception as e:
-            conn.rollback()
             logger.error(f"Database yaratishda xatolik: {e}")
+            logger.error(f"Xatolik tafsilotlari: {type(e).__name__}: {str(e)}")
             raise
         finally:
+            # Autocommit mode'ni o'chirish
+            conn.autocommit = False
             cursor.close()
-            self.return_connection(conn)
+            conn.close()
     
     def add_user(self, telegram_id: int, username: str, full_name: str, invited_by: Optional[int] = None) -> bool:
         """Yangi foydalanuvchi qo'shish"""
