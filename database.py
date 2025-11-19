@@ -74,12 +74,12 @@ class Database:
                 cursor.execute("""
                     CREATE TABLE users (
                         id SERIAL PRIMARY KEY,
-                        telegram_id INTEGER UNIQUE NOT NULL,
+                        telegram_id BIGINT UNIQUE NOT NULL,
                         username VARCHAR(255),
                         full_name VARCHAR(255),
                         balance INTEGER DEFAULT 0,
                         referal_code VARCHAR(255) UNIQUE,
-                        invited_by INTEGER,
+                        invited_by BIGINT,
                         register_date TIMESTAMP NOT NULL,
                         is_blocked INTEGER DEFAULT 0,
                         active_promocode VARCHAR(255) DEFAULT NULL
@@ -88,6 +88,17 @@ class Database:
                 logger.info("Users jadvali yaratildi")
             else:
                 logger.info("Users jadvali allaqachon mavjud")
+                # Agar jadval mavjud bo'lsa, INTEGER ni BIGINT ga o'zgartirish (migration)
+                try:
+                    cursor.execute("ALTER TABLE users ALTER COLUMN telegram_id TYPE BIGINT")
+                    logger.info("Users.telegram_id INTEGER dan BIGINT ga o'zgartirildi")
+                except psycopg2.ProgrammingError:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE users ALTER COLUMN invited_by TYPE BIGINT")
+                    logger.info("Users.invited_by INTEGER dan BIGINT ga o'zgartirildi")
+                except psycopg2.ProgrammingError:
+                    pass
             
             # Eski foydalanuvchilar uchun is_blocked ustunini qo'shish (agar mavjud bo'lmasa)
             try:
@@ -110,7 +121,7 @@ class Database:
                 cursor.execute("""
                     CREATE TABLE orders (
                         id SERIAL PRIMARY KEY,
-                        user_id INTEGER NOT NULL,
+                        user_id BIGINT NOT NULL,
                         type VARCHAR(50) NOT NULL,
                         topic TEXT NOT NULL,
                         price INTEGER NOT NULL,
@@ -122,13 +133,19 @@ class Database:
                 logger.info("Orders jadvali yaratildi")
             else:
                 logger.info("Orders jadvali allaqachon mavjud")
+                # Migration: INTEGER ni BIGINT ga o'zgartirish
+                try:
+                    cursor.execute("ALTER TABLE orders ALTER COLUMN user_id TYPE BIGINT")
+                    logger.info("Orders.user_id INTEGER dan BIGINT ga o'zgartirildi")
+                except psycopg2.ProgrammingError:
+                    pass
             
             # Payments jadvali
             if not self._table_exists(cursor, 'payments'):
                 cursor.execute("""
                     CREATE TABLE payments (
                         id SERIAL PRIMARY KEY,
-                        user_id INTEGER NOT NULL,
+                        user_id BIGINT NOT NULL,
                         amount INTEGER NOT NULL,
                         status VARCHAR(50) DEFAULT 'pending',
                         check_photo_link TEXT,
@@ -139,6 +156,12 @@ class Database:
                 logger.info("Payments jadvali yaratildi")
             else:
                 logger.info("Payments jadvali allaqachon mavjud")
+                # Migration: INTEGER ni BIGINT ga o'zgartirish
+                try:
+                    cursor.execute("ALTER TABLE payments ALTER COLUMN user_id TYPE BIGINT")
+                    logger.info("Payments.user_id INTEGER dan BIGINT ga o'zgartirildi")
+                except psycopg2.ProgrammingError:
+                    pass
             
             # Promocodes jadvali
             if not self._table_exists(cursor, 'promocodes'):
