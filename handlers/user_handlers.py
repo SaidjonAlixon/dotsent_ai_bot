@@ -387,7 +387,13 @@ Boshlash uchun quyidagi tugmalardan birini tanlang! 👇"""
 async def check_subscription_callback(callback: CallbackQuery, bot):
     """'Obuna bo'ldim' tugmasi bosilganda tekshirish"""
     telegram_id = callback.from_user.id
+    username = callback.from_user.username or ""
     full_name = callback.from_user.full_name or "Foydalanuvchi"
+    
+    # Database tekshirish
+    if not db:
+        await callback.answer("❌ Database xatolik. Iltimos, admin bilan bog'laning.", show_alert=True)
+        return
     
     # Agar kanal ID lari mavjud bo'lsa tekshiramiz
     if not config.REQUIRED_CHANNEL_1 or not config.REQUIRED_CHANNEL_2:
@@ -399,6 +405,29 @@ async def check_subscription_callback(callback: CallbackQuery, bot):
     is_subscribed_2 = await check_subscription(bot, telegram_id, config.REQUIRED_CHANNEL_2)
     
     if is_subscribed_1 and is_subscribed_2:
+        # Foydalanuvchini bazaga qo'shish yoki yangilash
+        user = db.get_user(telegram_id)
+        
+        if not user:
+            # Yangi foydalanuvchi - bazaga qo'shish
+            db.add_user(telegram_id, username, full_name, None)
+            welcome_text = f"""🎉 Xush kelibsiz, {full_name}!
+
+Men sizga kurs ishi va maqola tayyorlashda yordam beraman.
+
+🔹 Kurs ishi yozish - akademik kurs ishi tayyorlash
+🔹 Maqola yozish - ilmiy maqola tayyorlash
+🔹 Balansim - hisobingizni to'ldirish va ko'rish
+🔹 Pul ishlash - referal orqali bonus olish
+🔹 Profil - shaxsiy ma'lumotlaringiz
+🔹 Promokodlarim - chegirmalardan foydalanish
+
+Boshlash uchun quyidagi tugmalardan birini tanlang! 👇"""
+        else:
+            # Mavjud foydalanuvchi - ma'lumotlarni yangilash
+            db.update_user_info(telegram_id, username, full_name)
+            welcome_text = f"✅ Obuna tasdiqlandi!\n\nQaytganingizdan xursandmiz, {full_name}! 😊\n\nQuyidagi tugmalardan birini tanlang:"
+        
         # Obuna bo'lgan - asosiy menyuni ko'rsatish
         await callback.message.edit_text(
             f"✅ <b>Obuna tasdiqlandi!</b>\n\n"
@@ -407,7 +436,7 @@ async def check_subscription_callback(callback: CallbackQuery, bot):
             parse_mode="HTML"
         )
         await callback.message.answer(
-            "📋 Quyidagi xizmatlardan birini tanlang:",
+            welcome_text,
             reply_markup=get_main_menu()
         )
         await callback.answer()
